@@ -1,0 +1,16 @@
+CXX= CC
+CC = cc
+CPP= $(CC) -E
+COMP_ID_FLAGS= -DSGI_CC
+ENV_CFLAGS= -DSGI_MIPS -DINT4BYTES -mips2 -O2 -woff 3262
+ARCH_LIBOPTIONS= -lgen
+
+UILCC=uil
+
+RM = rm
+AR = ar rus
+RANLIB = echo fake-ranlib
+MAKEDEPEND = /usr/bin/X11/makedepend
+
+XLIBOPTIONS= -lSgm -lMrm -lXm -lXt -lXmu -lX11 -lsphere -lgl
+

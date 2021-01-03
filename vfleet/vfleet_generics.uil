@@ -1,0 +1,14 @@
+procedure
+	open_cb( integer );
+	unmanage_cb();
+	close_dialog_cb();
+
+object bad_file_dlog : XmErrorDialog {
+    arguments {
+	XmNdialogTitle = "Error Opening File";
+	XmNmessageString = compound_string("Error: that file doesn't appear to exist.", separate=true);
+    };
+};
+
+object menu_sep: XmSeparator {
+};

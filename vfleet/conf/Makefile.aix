@@ -1,0 +1,17 @@
+CXX= xlC
+CC = xlc
+CPP= $(CC) -E
+COMP_ID_FLAGS= -DAIX_CPLUSPLUS
+ENV_CFLAGS= -DIBM_RS6000 -DINT4BYTES -O
+ARCH_LIBOPTIONS= -lgen
+
+UILCC=uil
+
+RM = rm
+AR = ar rus
+RANLIB = ranlib
+MAKEDEPEND = /usr/bin/X11/makedepend
+
+XLIBOPTIONS= -Mrm -lXm -lXt -lXmu -lX11
+
+

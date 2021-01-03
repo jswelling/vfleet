@@ -1,0 +1,27 @@
+CXX= cxx
+CC = cc
+CPP= $(CC) -E
+COMP_ID_FLAGS= -DDECCXX 
+ENV_CFLAGS= -DDEC_ALPHA -DSHORT4BYTES -O2
+ARCH_LIBOPTIONS= 
+
+UILCC=uil
+
+RM = rm
+AR = ar rus
+RANLIB = ranlib
+MAKEDEPEND = /usr/bin/X11/makedepend
+
+XLIBOPTIONS= -lMrm -lXm -lXt -lXmu -lX11 -ldnet_stub
+
+# Special rules for DEC Alpha compilation
+
+octsamplevolume.o:
+	$(CXX) -c $(CFLAGS) -Olimit 657 $@ $*.cc
+
+octsample_trilin.o:
+	$(CXX) -c $(CFLAGS) -Olimit 630 $@ $*.cc
+
+datafile.o:
+	$(CXX) -c $(CFLAGS) -O0 $@ $*.cc
+

@@ -1,0 +1,734 @@
+ifdef(`INCL_HDF',`define(`INCL_SOMETHING')')
+ifdef(`INCL_FIASCO',`define(`INCL_SOMETHING')')
+ifdef(`INCL_SOMETHING',,`define(`INCL_NOTHING')')
+define(`_ifdef',`ifdef(`$1', `divert', `divert(-1)')')
+define(`_endif',`divert')
+
+!
+!	This UIL code defines the entries in the File menu of VFleet,
+!	and the associated dialogs.
+!
+
+procedure
+	open_datafile_cb();
+        open_remote_datafile_cb();
+	free_datavol_cb();	
+        exit_cb();
+	set_filetype_cb(integer);
+        set_remote_filetype_cb(integer);
+	save_image_file_cb();
+	set_image_save_type_cb(string);
+        num_text_check_cb();
+	edit_tfun_cb();
+	tcl_script_cb();
+	abort_script_cb();
+
+value file_help_text :
+	"Use this dialog to select a datavolume to open.\n" &
+	"\n" &
+	"Currently, only HDF and Pittsburgh MRI data files are supported.\n" &
+	"\n" &
+        "The values for dimensions can be used to set the aspect ratio " &
+        "of a data volume if it is not cubical.\n";
+      
+value open_remote_help_text :
+        "Use this dialog to select a datafile to open on the top level " &
+        "rendering host.  You must enter a full directory path in the " &
+	"directory slot.\n" &
+        "\n" &
+	"Currently, only HDF and Pittsburgh MRI data files are supported.\n" &
+	"\n" &
+        "The values for dimensions can be used to set the aspect ratio " &
+        "of a data volume if it is not cubical.\n";
+
+value free_datavol_help_text :
+        "Use this dialog to free the memory associated with a previously " &
+	"loaded volume of date.  If you do this, you will have to reload " &
+	"the data volume to use it again.  If the data volume is used by " &
+	"the current transfer function, deleting it will redefine the " &
+	"transfer function to use another data volume, or will delete " &
+	"the transfer function if no other data volume is loaded.";
+
+value free_dvol_mismatch_error_text :
+        "There is no data volume with the given name.";
+
+value save_image_help_text :
+	"Use this dialog to select a name under which to save the image.";
+
+value load_tcl_help_text :
+	"Use this dialog to select a Tcl script to be loaded and executed. " &
+	"The script file will be run as soon as it is loaded, causing " &
+	"images to be rendered and saved and that sort of thing.  The " &
+	"script will take over control of the application until its " &
+	"execution is complete. ";
+
+value no_image_to_save_msg: exported
+    compound_string("Error: no image to save!");
+
+value invalid_fname_msg: exported
+    compound_string("Error: you have not selected a valid filename.");
+
+value save_anyway_msg: exported
+    compound_string("Warning: that file exists.  Overwrite it?");
+
+value invalid_remote_fname_msg: exported
+    compound_string("Error: remote file does not exist or is not readable.");
+
+value error_reading_remote_dta_msg: exported
+    compound_string("Error: can't read remote data; wrong format?");
+
+object file_box : XmFileSelectionDialog {
+    arguments {
+        XmNdialogTitle = "Open Data File";
+_ifdef(`INCL_HDF')
+	XmNdirMask = "*.hdf";
+_endif
+_ifdef(`INCL_FIASCO')
+	XmNdirMask = "*.mri";
+_endif
+_ifdef(`INCL_NOTHING')
+	XmNdirMask = "*.hdf";
+_endif
+        XmNautoUnmanage = true;
+    };
+    controls {
+	XmForm dataset_description_form;
+    };
+    callbacks {
+        XmNhelpCallback=procedure help_cb(file_help_text);
+        MrmNcreateCallback = procedure create_cb(k_open_id);
+	XmNokCallback=procedure open_datafile_cb();
+    };    
+};
+
+object open_remote_dfile_dlog: XmFormDialog {
+  arguments {
+    XmNdialogTitle = "Open Remote Data File";
+  };
+  controls {
+    XmFrame open_remote_frame;
+    XmForm open_remote_controls;
+  };
+  callbacks {
+    MrmNcreateCallback= procedure create_cb(k_open_remote_id);
+  };
+};
+
+object open_remote_frame: XmFrame {
+  arguments {
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNshadowType = XmSHADOW_OUT;
+  };
+  controls {
+    XmForm open_remote_form;
+  };
+};
+
+object open_remote_form: XmForm {
+  arguments {
+    XmNhorizontalSpacing= 5;
+  };
+  controls {
+    XmForm open_remote_name_form;
+    XmForm open_remote_data_desc_form;
+  };
+};
+
+object open_remote_name_form : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+      XmLabel open_remote_dir_lbl;
+      XmTextField open_remote_dir_fld;
+      XmLabel open_remote_fname_lbl;
+      XmTextField open_remote_fname_fld;    
+  };
+};
+
+object open_remote_dir_lbl : XmLabel {
+  arguments { 
+    XmNlabelString = "Directory"; 
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNtopOffset= 5;
+  };
+};
+
+object open_remote_dir_fld : XmTextField {
+  arguments {
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= open_remote_dir_lbl;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNcolumns= 40;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb(k_remote_load_dir_id);
+  };
+};
+
+object open_remote_fname_lbl : XmLabel {
+  arguments { 
+    XmNlabelString = "Filename"; 
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= open_remote_dir_fld;
+    XmNtopOffset= 5;
+  };
+};
+
+object open_remote_fname_fld : XmTextField {
+  arguments {
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= open_remote_fname_lbl;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNcolumns= 40;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb(k_remote_load_file_id);
+  };
+};
+
+object open_remote_data_desc_form : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= open_remote_name_form;
+    XmNtopOffset= 5;
+    XmNleftAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmForm rmt_dset_description_form;
+  };
+};
+
+object open_remote_controls : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= open_remote_data_desc_form;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+    XmNfractionBase= 5;
+  };
+  controls {
+    XmPushButton open_remote_ok;
+    XmPushButton open_remote_cancel;
+    XmPushButton open_remote_help;
+  };
+};
+
+object open_remote_ok : XmPushButton {
+  arguments {
+    XmNlabelString = "Ok";
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 0;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 1;
+  };
+  callbacks {
+    XmNactivateCallback = procedure open_remote_datafile_cb();
+  };
+};
+
+object open_remote_cancel : XmPushButton {
+  arguments {
+    XmNlabelString = "Cancel";
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 2;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 3;
+  };
+  callbacks {
+    XmNactivateCallback = procedure close_dialog_cb();
+  };
+};
+
+object open_remote_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 4;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 5;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb(open_remote_help_text);
+  };
+};
+
+object rmt_dset_description_form: XmForm {
+    controls {
+      XmLabel rmt_dta_x_size_label;
+      XmTextField rmt_dta_x_size_text;
+      XmLabel rmt_dta_y_size_label;
+      XmTextField rmt_dta_y_size_text;
+      XmLabel rmt_dta_z_size_label;
+      XmTextField rmt_dta_z_size_text;
+      XmOptionMenu rmt_file_type_controls;
+    };
+};
+
+object rmt_dta_x_size_label : XmLabel {
+  arguments { 
+    XmNlabelString = "X length:"; 
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNtopOffset= 5;
+  };
+};
+
+object rmt_dta_x_size_text : XmTextField {
+  arguments {
+    XmNvalue = "1.0000";
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_WIDGET;
+    XmNleftWidget= rmt_dta_x_size_label;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb(k_rmt_dta_xsize_text_id);
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();    
+  };
+};
+
+object rmt_dta_y_size_label : XmLabel {
+  arguments { 
+    XmNlabelString = "Y length:"; 
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= rmt_dta_x_size_text;
+    XmNtopOffset= 5;
+  };
+};
+
+object rmt_dta_y_size_text : XmTextField {
+  arguments {
+    XmNvalue = "1.0000";
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= rmt_dta_x_size_text;
+    XmNleftAttachment= XmATTACH_WIDGET;
+    XmNleftWidget= rmt_dta_x_size_label;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb(k_rmt_dta_ysize_text_id);
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();    
+  };
+};
+
+object rmt_dta_z_size_label : XmLabel {
+  arguments { 
+    XmNlabelString = "Z length:"; 
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= rmt_dta_y_size_text;
+    XmNtopOffset= 5;
+  };
+};
+
+object rmt_dta_z_size_text : XmTextField {
+  arguments {
+    XmNvalue = "1.0000";
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= rmt_dta_y_size_text;
+    XmNleftAttachment= XmATTACH_WIDGET;
+    XmNleftWidget= rmt_dta_x_size_label;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb(k_rmt_dta_zsize_text_id);
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();    
+  };
+};
+
+object rmt_file_type_controls : XmOptionMenu {
+    arguments {
+	XmNlabelString = "File Type:";
+	XmNleftAttachment= XmATTACH_FORM;
+	XmNtopAttachment= XmATTACH_WIDGET;
+	XmNtopWidget= rmt_dta_z_size_text;
+    };
+    controls {
+	XmPulldownMenu rmt_file_type_pd;
+    };
+};
+
+_ifdef(`INCL_HDF')
+object rmt_file_type_hdf : XmPushButton {
+    arguments {
+	XmNlabelString = "HDF";
+    };
+    callbacks {
+	XmNactivateCallback = procedure set_remote_filetype_cb(hdf);
+    };
+};
+_endif
+
+_ifdef(`INCL_FIASCO')
+object rmt_file_type_fiasco : XmPushButton {
+    arguments {
+	XmNlabelString = "Pgh MRI";
+    };
+    callbacks {
+	XmNactivateCallback = procedure set_remote_filetype_cb(pghmri);
+    };
+};
+_endif
+
+object rmt_file_type_pd : XmPulldownMenu {
+    controls {
+_ifdef(`INCL_HDF')
+	XmPushButton rmt_file_type_hdf;
+_endif
+_ifdef(`INCL_FIASCO')
+	XmPushButton rmt_file_type_fiasco;
+_endif
+    };
+};
+
+object free_datavol_selection_dlog: XmSelectionDialog {
+  arguments {
+    XmNdialogTitle = "Free DataVolume";
+    XmNautoUnmanage = true;
+    XmNmustMatch = true;
+    XmNlistVisibleItemCount= 3;
+  };
+  callbacks {
+    XmNhelpCallback= procedure help_cb(free_datavol_help_text);
+    MrmNcreateCallback= procedure create_cb(k_free_datavol_id);
+    XmNokCallback=procedure free_datavol_cb();
+    XmNnoMatchCallback= procedure error_cb(free_dvol_mismatch_error_text);
+  };
+};
+
+object dataset_description_form: XmForm {
+    controls {
+      XmLabel data_x_size_label;
+      XmTextField data_x_size_text;
+      XmLabel data_y_size_label;
+      XmTextField data_y_size_text;
+      XmLabel data_z_size_label;
+      XmTextField data_z_size_text;
+      XmOptionMenu file_type_controls;
+    };
+};
+
+object data_x_size_label : XmLabel {
+  arguments { 
+    XmNlabelString = "X length:"; 
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNtopOffset= 5;
+  };
+};
+
+object data_x_size_text : XmTextField {
+  arguments {
+    XmNvalue = "1.0000";
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_WIDGET;
+    XmNleftWidget= data_x_size_label;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb(k_data_xsize_text_id);
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();    
+  };
+};
+
+object data_y_size_label : XmLabel {
+  arguments { 
+    XmNlabelString = "Y length:"; 
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= data_x_size_text;
+    XmNtopOffset= 5;
+  };
+};
+
+object data_y_size_text : XmTextField {
+  arguments {
+    XmNvalue = "1.0000";
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= data_x_size_text;
+    XmNleftAttachment= XmATTACH_WIDGET;
+    XmNleftWidget= data_x_size_label;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb(k_data_ysize_text_id);
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();    
+  };
+};
+
+object data_z_size_label : XmLabel {
+  arguments { 
+    XmNlabelString = "Z length:"; 
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= data_y_size_text;
+    XmNtopOffset= 5;
+  };
+};
+
+object data_z_size_text : XmTextField {
+  arguments {
+    XmNvalue = "1.0000";
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= data_y_size_text;
+    XmNleftAttachment= XmATTACH_WIDGET;
+    XmNleftWidget= data_x_size_label;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb(k_data_zsize_text_id);
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();    
+  };
+};
+
+object file_type_controls : XmOptionMenu {
+    arguments {
+	XmNlabelString = "File Type:";
+	XmNleftAttachment= XmATTACH_FORM;
+	XmNtopAttachment= XmATTACH_WIDGET;
+	XmNtopWidget= data_z_size_text;
+    };
+    controls {
+	XmPulldownMenu file_type_pd;
+    };
+};
+
+_ifdef(`INCL_HDF')
+object file_type_hdf : XmPushButton {
+    arguments {
+	XmNlabelString = "HDF";
+    };
+    callbacks {
+	XmNactivateCallback = procedure set_filetype_cb(hdf);
+    };
+};
+_endif
+
+_ifdef(`INCL_FIASCO')
+object file_type_fiasco : XmPushButton {
+    arguments {
+	XmNlabelString = "Pgh MRI";
+    };
+    callbacks {
+	XmNactivateCallback = procedure set_filetype_cb(pghmri);
+    };
+};
+_endif
+
+object file_type_pd : XmPulldownMenu {
+    controls {
+_ifdef(`INCL_HDF')
+	XmPushButton file_type_hdf;
+_endif
+_ifdef(`INCL_FIASCO')
+	XmPushButton file_type_fiasco;
+_endif
+    };
+};
+
+object image_save_file_box : XmFileSelectionDialog {
+    arguments {
+        XmNdialogTitle = "Save Image File";
+        XmNautoUnmanage = false;
+    };
+    controls {
+	XmOptionMenu save_image_type_controls;
+    };
+    callbacks {
+        XmNhelpCallback=procedure help_cb(save_image_help_text);
+        MrmNcreateCallback = procedure create_cb(k_image_save_id);
+	XmNokCallback=procedure save_image_file_cb();
+	XmNcancelCallback = procedure unmanage_cb();
+    };    
+};
+
+object save_image_type_controls : XmOptionMenu {
+    arguments {
+	XmNlabelString = "Image File Type:";
+    };
+    controls {
+	XmPulldownMenu image_file_type_pd;
+    };
+};
+
+object image_file_type_pd : XmPulldownMenu {
+    controls {
+	XmPushButton file_type_tiff;
+	XmPushButton file_type_ps;
+_ifdef(`IMTOOLS_IMAGE_HANDLING')
+	XmPushButton file_type_rle;
+	XmPushButton file_type_gif;
+	XmPushButton file_type_pict;
+	XmPushButton file_type_rgb;
+_endif
+    };
+};
+
+object file_type_tiff : XmPushButton {
+    arguments {
+	XmNlabelString = "TIFF";
+    };
+    callbacks {
+	! top button needs create callback to make it default
+	MrmNcreateCallback = procedure set_image_save_type_cb("tiff");
+	XmNactivateCallback = procedure set_image_save_type_cb("tiff");
+    };
+};
+
+object file_type_ps : XmPushButton {
+    arguments {
+	XmNlabelString = "Postscript";
+    };
+    callbacks {
+	XmNactivateCallback = procedure set_image_save_type_cb("ps");
+    };
+};
+
+object file_type_rle : XmPushButton {
+    arguments {
+	XmNlabelString = "RLE";
+    };
+    callbacks { 
+	XmNactivateCallback = procedure set_image_save_type_cb("rle");
+    };
+};
+
+object file_type_gif : XmPushButton {
+    arguments {
+	XmNlabelString = "GIF";
+    };
+    callbacks {
+	XmNactivateCallback = procedure set_image_save_type_cb("gif");
+    };
+};
+
+object file_type_pict : XmPushButton {
+    arguments {
+	XmNlabelString = "Mac PICT";
+    };
+    callbacks {
+	XmNactivateCallback = procedure set_image_save_type_cb("pict");
+    };
+};
+
+object file_type_rgb : XmPushButton {
+    arguments {
+	XmNlabelString = "SGI RGB";
+    };
+    callbacks {
+	XmNactivateCallback = procedure set_image_save_type_cb("rgb");
+    };
+};
+
+object load_tcl_file_box : XmFileSelectionDialog {
+    arguments {
+        XmNdialogTitle = "Run Tcl Script";
+	XmNdirMask = "*.tcl";
+        XmNautoUnmanage = false;
+    };
+    callbacks {
+        XmNhelpCallback=procedure help_cb(load_tcl_help_text);
+        MrmNcreateCallback = procedure create_cb(k_tcl_script_id);
+	XmNokCallback=procedure tcl_script_cb();
+	XmNcancelCallback = procedure unmanage_cb();
+    };    
+};
+
+object file_pd : XmPulldownMenu {
+    controls {
+	XmPushButton open_datafile_pb;
+	XmPushButton open_remote_dfile_pb;
+	XmPushButton free_datavol_pb;
+	XmPushButton open_tfun_pb;
+	XmPushButton edit_tfun_pb;
+	XmPushButton save_tfun_pb;
+	XmPushButton save_image_pb;
+	XmSeparator menu_sep;
+	XmPushButton load_tcl_script_pb;
+	XmPushButton abort_script_pb;
+	XmSeparator menu_sep;
+	XmToggleButton debugger_tb;
+	XmSeparator menu_sep;
+        XmPushButton exit_pb;
+    };
+};
+
+object open_datafile_pb : XmPushButton {
+    arguments { XmNlabelString = "Open Data File"; XmNmnemonic = keysym('O');};
+    callbacks { XmNactivateCallback = procedure open_cb( k_open_id ); };
+};
+
+object open_remote_dfile_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "Open Remote Data File"; 
+    XmNsensitive = false;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb( k_open_remote_pb_id );
+    XmNactivateCallback = procedure open_cb( k_open_remote_id ); 
+  };
+};
+
+object free_datavol_pb : XmPushButton {
+    arguments { XmNlabelString = "Free DataVolume"; 
+	XmNmnemonic = keysym('F');};
+    callbacks { 
+	XmNactivateCallback = procedure open_cb( k_free_datavol_id ); 
+	};
+};
+object open_tfun_pb : XmPushButton {
+    arguments { XmNlabelString = "Open Transfer Function";
+		XmNmnemonic = keysym('T');};
+    callbacks { XmNactivateCallback = procedure open_cb( k_tfun_open_id ); };
+};
+
+object edit_tfun_pb : XmPushButton {
+    arguments { XmNlabelString = "Create/Edit Transfer Function";
+		XmNmnemonic = keysym('N');};
+    callbacks { XmNactivateCallback = 
+	procedure edit_tfun_cb(); };
+};
+
+object save_tfun_pb : XmPushButton {
+  arguments { XmNlabelString = "Save Transfer Function"; };
+  callbacks { XmNactivateCallback = 
+	      procedure open_cb( k_tfun_save_id ); };
+};
+
+object save_image_pb : XmPushButton {
+    arguments { XmNlabelString = "Save Image";
+		XmNmnemonic = keysym('S');};
+    callbacks { XmNactivateCallback = procedure open_cb( k_image_save_id ); };
+};
+
+object load_tcl_script_pb : XmPushButton {
+    arguments { XmNlabelString = "Run Tcl Script";
+		XmNmnemonic = keysym('R');};
+    callbacks { XmNactivateCallback = procedure open_cb( k_tcl_script_id ); };
+};
+
+object abort_script_pb : XmPushButton {
+    arguments { XmNlabelString = "Abort Script";
+		XmNmnemonic = keysym('A');};
+    callbacks { XmNactivateCallback = procedure abort_script_cb(); };
+};
+
+object debugger_tb : XmToggleButton {
+    arguments { XmNlabelString = "Show Debugger Menu"; XmNmnemonic = keysym('D');};
+    callbacks { XmNvalueChangedCallback = procedure show_debugger_controls_cb(); };
+};
+object exit_pb : XmPushButton {
+    arguments { XmNlabelString = "Quit"; XmNmnemonic = keysym('Q');};
+    callbacks { XmNactivateCallback = procedure exit_cb(); };
+};
+
+
+
+
+
+

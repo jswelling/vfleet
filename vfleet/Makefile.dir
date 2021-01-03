@@ -1,0 +1,278 @@
+include $(TOP)/conf/Makefile.$(ARCH)
+
+CFLAGS += -I. -DAVOID_XVIEW -DAVOID_IMTOOLS -DMOTIF
+include $(TOP)/depend.mk.$(ARCH)
+
+O = $(TOP)/obj/$(ARCH)
+L = $(TOP)/lib/$(ARCH)
+B = $(TOP)/bin/$(ARCH)
+SUBMAKES= 
+
+BUILD_EXES = $B/servman $B/logserver $B/vrenserver \
+	$B/vfleet $B/comtester $B/comtestserver \
+	$B/xlogserver $B/vfleet.uid
+
+CXXSOURCE= tester.cc vren.cc \
+	logger.cc xlogger.cc imagehandler.cc rgbimage_dumb.cc netrgbimage.cc \
+	basenet.cc loggertester.cc logserver.cc \
+        imagehandlerserver.cc netimagehandler.cc ximagehandler.cc \
+	raycastvren.cc geometry.cc camera.cc \
+	datavolume.cc samplevolume.cc volgob.cc lightinfo.cc \
+	gobgeometry.cc qualitymeasure.cc octree.cc \
+	octree_tester.cc datafile.cc datafile_tester.cc \
+	netvren.cc netlogger.cc vrenserver.cc tfun.cc octsamplevolume.cc \
+	raycamera.cc compvren.cc composite.cc vfleet.cc vfleet_nav.cc \
+	cball.cc listloggertester.cc xlogserver.cc \
+	logimagehandler.cc tfunhandler.cc xtfunhandler.cc \
+	lists.cc lists_tester.cc sliceviewer.cc xsliceviewer.cc \
+	xphotocopy.cc netcomtest.cc comtestserver.cc comtester.cc \
+	hdftobytes.cc bytestohdf.cc hdftobytes_quadrant.cc slicedvol.cc \
+	servman.cc floatstohdf.cc shortstohdf.cc xdrawih.cc xmautodrawih.cc \
+	vcompvren.cc ocomposite.cc bcomposite.cc bcompvren.cc \
+	vfleet_script.cc polyscan.cc octree_timer.cc geom_timer.cc \
+	octsample_trilin.cc tinydraw.cc xcball.cc vfleet_info.cc \
+	vfleet_ren_ctrl.cc vfleet_tfun.cc xmautoimagehandler.cc \
+	comp_timer.cc tdraw_tester.cc xcamhandler.cc canvases.cc \
+	glximagehandler.cc netdatafile.cc
+
+CSOURCE=
+
+HFILES= basenet.h geometry.h imagehandler.h imagehandlerserver.h \
+	logger.h net_messages.h net_msgnames.h netimagehandler.h netrgbimage.h\
+        netv.h octree.h	pvm.h pvm_messages.h raycastvren.h rgbimage.h \
+	sdsc_hacked.h servman.h vren.h ximagehandler.h \
+	datafile.h netvren.h netlogger.h xlogger.h \
+	compvren.h composite.h cball.h logimagehandler.h tfunhandler.h \
+	xtfunhandler.h lists.h sliceviewer.h xsliceviewer.h xphotocopy.h \
+	netcomtest.h xdrawih.h vcompvren.h ocomposite.h bcomposite.h \
+	bcompvren.h polyscan.h tinydraw.h sphere.h vfleet.h tfun.h \
+	slicedvol.h xcball.h im.h sdsc.h tag.h bin.h arg.h sdscconfig.h \
+	camera.h xcamhandler.h canvases.h glximagehandler.h \
+	basedatafile.h netdatafile.h jthreads.h
+
+M4UILFILES= vfleet_file_menu.m4_uil
+
+UILFILES= vfleet.uil vfleet_debug_menu.uil \
+	vfleet_error.uil vfleet_generics.uil \
+	vfleet_goodies.uil vfleet_help.uil vfleet_qual_dlog.uil \
+	vfleet_ren_dlog.uil vfleet_tfun_dlog.uil vfleet_slices.uil \
+	vfleet_photo.uil vfleet_camera.uil
+
+VFLEETUILSRC= $(UILFILES) vfleet_file_menu.uil 
+
+ASMSOURCE= 
+
+FSOURCE= tbl_sqrt.f
+
+HDFFILES= vortices.hdf
+
+TFUNFILES= sample.tfn default_tfun.tfn default_bbox_tfun.tfn \
+	default_block_tfun.tfn default_grad_tfun.tfn default_mask_tfun.tfn \
+	default_ssum_tfun.tfn default_sum_tfun.tfn default_table_tfun.tfn
+
+DOCFILES= README README_SRC doc/*.html
+
+MAKEFILES= Makefile Makefile.dir rules.mk configure conf/Makefile.*
+
+MISCFILES= $(MAKEFILES) $(UILFILES) $(M4UILFILES) $(ASMSOURCE) \
+	$(HDFFILES) $(TFUNFILES)
+
+BYTESTOHDFOBJ= $O/bytestohdf.o
+SHORTSTOHDFOBJ= $O/shortstohdf.o
+FLOATSTOHDFOBJ= $O/floatstohdf.o
+HDFTOBYTESOBJ= $O/hdftobytes.o datafile.o
+HDFTOBYTESQUADOBJ= $O/hdftobytes_quadrant.o $O/datafile.o
+HDFTOBYTESLOGOBJ= $O/hdftobytes_log.o $O/datafile.o
+HDFTOBYTESQUADLOGOBJ= $O/hdftobytes_quad_log.o $O/datafile.o
+
+MIMVIEWOBJ= $O/mimview.o $O/rgbimage_dumb.o $O/imagehandler.o \
+	$O/ximagehandler.o $O/xmautoimagehandler.o
+
+MANIMOBJ= $O/m-anim.o $O/rgbimage_dumb.o $O/imagehandler.o \
+	$O/ximagehandler.o $O/xmautoimagehandler.o
+
+TESTEROBJ= $O/tester.o $O/basenet.o $O/logger.o $O/netlogger.o
+
+COMTESTEROBJ= $O/comtester.o $O/netcomtest.o $O/netlogger.o \
+	$O/logger.o $O/basenet.o
+
+SMOBJ= $O/servman.o $O/basenet.o $O/logger.o $O/netlogger.o $O/vren.o \
+	$O/rgbimage_dumb.o $O/imagehandler.o $O/geometry.o \
+	$O/netvren_noren.o $O/netimagehandler.o $O/camera.o $O/datavolume.o \
+	$O/samplevolume.o $O/volgob.o $O/lightinfo.o \
+	$O/gobgeometry.o $O/qualitymeasure.o $O/tfun.o $O/netrgbimage.o \
+	$O/netcomtest.o $O/datafile.o $O/netdatafile.o $O/lists.o
+
+LOGGEROBJ= $O/loggertester.o $O/logger.o
+
+LISTLOGGEROBJ= $O/listloggertester.o $O/logger.o $O/xlogger.o
+
+COMTESTSERVEROBJ= $O/comtestserver.o $O/netcomtest.o $O/netlogger.o \
+	$O/logger.o $O/basenet.o
+
+LOGSERVEROBJ= $O/logserver.o $O/logger.o $O/basenet.o $O/netlogger.o
+
+XLOGSERVEROBJ= $O/xlogserver.o $O/logger.o $O/xlogger.o $O/basenet.o \
+	$O/netlogger.o
+
+VRENSERVEROBJ= $O/vrenserver.o $O/vren.o $O/basenet.o $O/rgbimage_dumb.o \
+	$O/imagehandler.o $O/logger.o $O/raycastvren.o $O/geometry.o \
+	$O/datavolume.o $O/camera.o $O/volgob.o $O/samplevolume.o \
+	$O/gobgeometry.o $O/octree.o $O/qualitymeasure.o $O/lightinfo.o \
+	$O/netvren.o $O/netlogger.o $O/netimagehandler.o $O/netrgbimage.o \
+	$O/tfun.o $O/octsamplevolume.o $O/raycamera.o $O/compvren.o \
+	$O/composite.o $O/bcompvren.o $O/bcomposite.o $O/polyscan.o \
+	$O/octsample_trilin.o $O/datafile.o $O/netdatafile.o $O/lists.o
+
+OCTREETESTEROBJ= $O/octree_tester.o $O/octree.o $O/geometry.o
+
+OCTREETIMEROBJ= $O/octree_timer.o $O/octree.o $O/geometry.o
+
+GEOMTIMEROBJ= $O/geom_timer.o $O/geometry.o
+
+DATAFILETESTEROBJ= $O/datafile_tester.o $O/datafile.o
+
+#VFLEETOBJ = $O/rgbimage_dumb.o $O/netrgbimage.o \
+#	$O/imagehandler.o $O/netimagehandler.o $O/logger.o \
+#	$O/vren.o $O/geometry.o $O/camera.o $O/datavolume.o \
+#	$O/samplevolume.o $O/volgob.o $O/lightinfo.o $O/gobgeometry.o \
+#	$O/qualitymeasure.o $O/cball.o $O/raycastvren.o $O/octree.o \
+#	$O/octsamplevolume.o $O/raycamera.o $O/basenet.o \
+#	$O/datafile.o $O/tfun.o $O/netlogger.o $O/netvren_noren.o \
+#	$O/ximagehandler.o $O/xcball.o $O/xlogger.o $O/logimagehandler.o \
+#	$O/vfleet.o $O/vfleet_info.o $O/vfleet_ren_ctrl.o $O/vfleet_tfun.o \
+#	$O/tinydraw.o $O/tfunhandler.o $O/xtfunhandler.o $O/lists.o \
+#	$O/sliceviewer.o $O/xsliceviewer.o $O/xphotocopy.o $O/slicedvol.o \
+#	$O/vfleet_script.o $O/polyscan.o $O/vfleet_nav.o \
+#	$O/xdrawih.o $O/octsample_trilin.o $O/xmautodrawih.o \
+#	$O/xmautoimagehandler.o $O/xcamhandler.o $O/canvases.o \
+#	$O/glximagehandler.o $O/netdatafile.o
+
+VFLEETOBJ = $O/rgbimage_dumb.o  \
+	$O/imagehandler.o $O/logger.o \
+	$O/vren.o $O/geometry.o $O/camera.o $O/datavolume.o \
+	$O/samplevolume.o $O/volgob.o $O/lightinfo.o $O/gobgeometry.o \
+	$O/qualitymeasure.o $O/cball.o $O/raycastvren.o $O/octree.o \
+	$O/octsamplevolume.o $O/raycamera.o \
+	$O/datafile.o $O/tfun.o \
+	$O/ximagehandler.o $O/xcball.o $O/xlogger.o $O/logimagehandler.o \
+	$O/vfleet.o $O/vfleet_info.o $O/vfleet_ren_ctrl.o $O/vfleet_tfun.o \
+	$O/tinydraw.o $O/tfunhandler.o $O/xtfunhandler.o $O/lists.o \
+	$O/sliceviewer.o $O/xsliceviewer.o $O/xphotocopy.o $O/slicedvol.o \
+	$O/vfleet_script.o $O/polyscan.o $O/vfleet_nav.o \
+	$O/xdrawih.o $O/octsample_trilin.o $O/xmautodrawih.o \
+	$O/xmautoimagehandler.o $O/xcamhandler.o $O/canvases.o \
+	$O/glximagehandler.o 
+
+TDRAWTESTEROBJ = $O/tdraw_tester.o $O/tinydraw.o $O/camera.o \
+	$O/rgbimage_dumb.o $O/imagehandler.o $O/ximagehandler.o $O/xdrawih.o \
+	$O/cball.o $O/xcball.o $O/geometry.o $O/polyscan.o $O/lists.o
+
+LISTSTESTEROBJ = $O/lists_tester.o $O/lists.o
+
+
+VFLEET_EXES= vfleet vfleet.uid servman vrenserver xlogserver bytestohdf \
+	floatstohdf
+
+DEPENDSOURCE= $(CXXSOURCE)
+
+# The configuration include file adds to the lists of objects and flags
+include $(TOP)/config.mk.$(ARCH)
+
+$B/tdraw_tester: $(TDRAWTESTEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(TDRAWTESTEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/comtester: $(COMTESTEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(COMTESTEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/lists_tester: $(LISTSTESTEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(LISTSTESTEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/tester: $(TESTEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(TESTEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/servman: $(SMOBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(SMOBJ) $(LIB_OBJ) $(LIBS)
+
+$B/comtestserver: $(COMTESTSERVEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(COMTESTSERVEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/logserver: $(LOGSERVEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(LOGSERVEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/xlogserver: $(XLOGSERVEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(XLOGSERVEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/vrenserver: $(VRENSERVEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(VRENSERVEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/loggertester: $(LOGGEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(LOGGEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/listloggertester: $(LISTLOGGEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(LISTLOGGEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/vfleet.uid: $(VFLEETUILSRC)
+	@echo "Linking " $@
+	$(UILCC) -o $@ vfleet.uil
+
+$O/netvren_noren.o:netvren.cc $O
+	@echo "Compiling netvren.cc to make netvren_noren.o"
+	@$(CXX) -c $(CFLAGS) -DNO_REAL_VREN -o $@ netvren.cc
+
+$B/octree_tester: $(OCTREETESTEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(OCTREETESTEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/octree_timer: $(OCTREETIMEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(OCTREETIMEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/geom_timer: $(GEOMTIMEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(GEOMTIMEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/datafile_tester: $(DATAFILETESTEROBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(DATAFILETESTEROBJ) $(LIB_OBJ) $(LIBS)
+
+$B/vfleet: $(VFLEETOBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(VFLEETOBJ) $(LIB_OBJ) $(LIBS)
+
+$B/mimview: $(MIMVIEWOBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(MIMVIEWOBJ) $(LIB_OBJ) $(LIBS)
+
+$B/m-anim: $(MANIMOBJ) 
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(MANIMOBJ) $(LIB_OBJ) $(LIBS)
+
+$B/shortstohdf: $(SHORTSTOHDFOBJ)
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(SHORTSTOHDFOBJ) $(LIB_OBJ) $(LIBS)
+
+$B/bytestohdf: $(BYTESTOHDFOBJ)
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(BYTESTOHDFOBJ) $(LIB_OBJ) $(LIBS)
+
+$B/floatstohdf: $(FLOATSTOHDFOBJ)
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(FLOATSTOHDFOBJ) $(LIB_OBJ) $(LIBS)
+
+$B/hdftobytes: $(HDFTOBYTESOBJ)
+	@echo "Linking " $@
+	@$(CXX) -o $@ $(LFLAGS) $(HDFTOBYTESOBJ) $(LIB_OBJ) $(LIBS)
+
+include $(TOP)/rules.mk

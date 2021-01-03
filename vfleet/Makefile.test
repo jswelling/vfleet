@@ -1,0 +1,124 @@
+CC= gcc
+UILCC= uil
+
+CFLAGS= -Wall -g -I/afs/andrew.cmu.edu/@sys/local/include -I/afs/psc.edu/projects/volumetrics/include -I/usr/local/X11R5/include -I/usr/local/include
+
+# Sun's need to add /usr/lib/libdl.so.1.0 to LIBOPTIONS (at the end)
+
+# Dec's need to add -ldnet to LIBOPTIONS (at the end) if they compiled X for decnet use.
+
+LIBOPTIONS= -L/afs/psc.edu/projects/volumetrics/@sys/lib -L/usr/local/X11R5/lib -lpvm -lim -lsdsc -lMrm -lXm -lXt -lXext -lXmu -lX11 -lm /usr/lib/libdl.so.1.0
+
+CCSOURCE= test.c crystal_ball.c crystal.c
+
+UILSOURCE= test.uil
+
+TESTOBJ= test.o crystal_ball.o crystal.o
+
+EXECUTABLES= test
+
+UIDOBJ= test.uid
+
+all: $(EXECUTABLES) $(UIDOBJ)
+
+test: $(TESTOBJ)
+	$(CC) -o $@ $(TESTOBJ) $(LIBOPTIONS)
+
+depend: $(CCSOURCE)
+	makedepend -DMAKING_DEPEND -- $(CFLAGS) -- $(CCSOURCE) $(CSOURCE)
+
+clean:
+	-rm *.o *.uid core
+
+clobber: clean
+	-rm $(EXECUTABLES) 
+
+.SUFFIXES: .cc .uil .uid
+
+.uil.uid: ; $(UILCC) -o $@ $*.uil
+
+.cc.o: ; $(CC) -c $(CFLAGS) -o $@ $*.cc
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+test.o: /usr/include/stdio.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/Mrm/MrmAppl.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Intrinsic.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Xlib.h
+test.o: /usr/include/sys/types.h /usr/include/sys/stdtypes.h
+test.o: /usr/include/sys/sysmacros.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/X.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Xutil.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Xresource.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Xos.h
+test.o: /usr/include/strings.h /usr/include/sys/file.h
+test.o: /usr/include/sys/fcntlcom.h /usr/include/sys/stat.h
+test.o: /usr/include/sys/time.h /usr/include/sys/time.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Core.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Composite.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Constraint.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Object.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/RectObj.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/StringDefs.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Shell.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/XmP.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/Xm.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Vendor.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/VirtKeys.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/VendorE.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/ExtObject.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/IntrinsicP.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/CoreP.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/CompositeP.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/ConstrainP.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/ObjectP.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/RectObjP.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/Traversal.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/ShellP.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/X11/VendorP.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/BaseClassI.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/Mrm/MrmPublic.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/Mrm/MrmDecls.h
+test.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/MessageB.h crystal.h
+crystal_ball.o: /usr/include/stdio.h /usr/include/math.h
+crystal_ball.o: /usr/include/floatingpoint.h /usr/include/sys/ieeefp.h
+crystal_ball.o: crystal_ball.h
+crystal.o: /usr/include/stdio.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/Mrm/MrmAppl.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Intrinsic.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Xlib.h
+crystal.o: /usr/include/sys/types.h /usr/include/sys/stdtypes.h
+crystal.o: /usr/include/sys/sysmacros.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/X.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Xutil.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Xresource.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Xos.h
+crystal.o: /usr/include/strings.h /usr/include/sys/file.h
+crystal.o: /usr/include/sys/fcntlcom.h /usr/include/sys/stat.h
+crystal.o: /usr/include/sys/time.h /usr/include/sys/time.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Core.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Composite.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Constraint.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Object.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/RectObj.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/StringDefs.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Shell.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/XmP.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/Xm.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/Vendor.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/VirtKeys.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/VendorE.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/ExtObject.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/IntrinsicP.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/CoreP.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/CompositeP.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/ConstrainP.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/ObjectP.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/RectObjP.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/Traversal.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/ShellP.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/X11/VendorP.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/Xm/BaseClassI.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/Mrm/MrmPublic.h
+crystal.o: /afs/andrew.cmu.edu/@sys/local/include/Mrm/MrmDecls.h
+crystal.o: crystal_ball.h crystal.h crystalP.h

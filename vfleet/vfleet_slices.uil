@@ -1,0 +1,170 @@
+!
+!	This UIL code defines the slice viewer dialogs for VFleet
+!
+
+procedure
+        xsliceviewer_delete_cb();
+        xsliceviewer_create_cb(integer);
+	xsliceviewer_expose_cb(integer);
+	xsliceviewer_slider_update_cb();
+        xsliceviewer_update_image_cb();
+
+value slice_help_text :
+   "This dialog shows the result of applying the current transfer " &
+   "function to a single slice of the current set of data " &
+   "volumes.\n" &
+   "\n" &
+   "The slider allows you to select the slice which is viewed;  the " &
+   "close button closes this window.  The transparency button toggles " &
+   "multiplication of the colors by the appropriate alpha value.  The " &
+   "help button produces help information.\n" &
+   "\n" &
+   "Whenever you modify the current transfer function, the change " &
+   "effects the image in the window.  Redrawing of the window is slow " &
+   "because the transfer function must be applied to all the data in " &
+   "the slice.  If your transfer function is complex, this can take time.";
+
+value xsliceviewer_min_img_width : exported 104;
+
+! identifier owner_object; was defined elsewhere
+
+identifier xsliceviewer_image_xsize;
+identifier xsliceviewer_image_ysize;
+identifier xsliceviewer_nslices;
+identifier xsliceviewer_current_slice;
+
+object sliceviewer_x_dlog : XmFormDialog {
+  arguments {
+    XmNdialogTitle = "X Slice";
+    XmNuserData = owner_object;
+  };
+  controls { 
+    XmForm sliceviewer_image_form;
+    XmForm sliceviewer_controls;
+  };
+};
+
+object sliceviewer_y_dlog : XmFormDialog {
+  arguments {
+    XmNdialogTitle = "Y Slice";
+    XmNuserData = owner_object;
+  };
+  controls { 
+    XmForm sliceviewer_image_form;
+    XmForm sliceviewer_controls;
+  };
+};
+
+object sliceviewer_z_dlog : XmFormDialog {
+  arguments {
+    XmNdialogTitle = "Z Slice";
+    XmNuserData = owner_object;
+  };
+  controls { 
+    XmForm sliceviewer_image_form;
+    XmForm sliceviewer_controls;
+  };
+};
+
+object sliceviewer_image_form : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  controls {
+!    XmDrawingArea sliceviewer_image_area;
+    user_defined sliceviewer_image_area;
+  };
+};
+
+!object sliceviewer_image_area : XmDrawingArea {
+object sliceviewer_image_area : user_defined procedure CreateCanvas {
+    arguments {
+      XmNtopAttachment= XmATTACH_FORM;
+! No left attachment to allow it to be centered by the application
+      XmNwidth = xsliceviewer_image_xsize;
+      XmNheight = xsliceviewer_image_ysize;
+      XmNresizable = false;
+      XmNbackground = color('Black');
+      XmNuserData = owner_object;
+    };
+    callbacks {
+      MrmNcreateCallback = procedure xsliceviewer_create_cb(0);
+      XmNexposeCallback = procedure xsliceviewer_expose_cb(0);
+    };
+};
+
+object sliceviewer_controls : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= sliceviewer_image_form;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmScale sliceviewer_scale;
+    XmToggleButton sliceviewer_alpha_toggle;
+    XmPushButton sliceviewer_delete;
+    XmPushButton sliceviewer_help;
+  };
+};
+
+object sliceviewer_alpha_toggle : XmToggleButton {
+  arguments {
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = sliceviewer_scale;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNlabelString = "Alpha scaled";
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xsliceviewer_create_cb(1);
+    XmNvalueChangedCallback = procedure xsliceviewer_update_image_cb();
+  };
+};
+
+object sliceviewer_delete : XmPushButton {
+  arguments {
+    XmNlabelString = "Close";
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget= sliceviewer_alpha_toggle;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure xsliceviewer_delete_cb();
+  };
+};
+
+object sliceviewer_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget= sliceviewer_alpha_toggle;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb( slice_help_text );
+  };
+};
+
+object sliceviewer_scale : XmScale {
+  arguments {
+    XmNminimum = 1;
+    XmNmaximum = xsliceviewer_nslices;
+    XmNdecimalPoints = 0;
+    XmNvalue = xsliceviewer_current_slice;
+    XmNshowValue = true;
+    XmNorientation = XmHORIZONTAL;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNvalueChangedCallback = procedure xsliceviewer_slider_update_cb();
+  };
+};
+

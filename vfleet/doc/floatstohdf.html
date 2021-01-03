@@ -1,0 +1,152 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Floatstohdf</title>
+  </head>
+
+  <body>
+      <h1>Floatstohdf</h1>
+
+      <h2>Name</h2>
+
+      <b>floatstohdf</b> - convert stream of floats to 
+      <A HREF="http://hdf.ncsa.uiuc.edu/index.html">HDF</A> SDS format
+
+      <h2>Synopsis</h2>
+
+<pre>
+<code>
+floatstohdf [-l<var>label</var>] [-u<var>units</var>] [-f<var>format</var>] [-c<var>coordsys</var>] 
+      [-b[Fortran|C]] [-s<var>hdrbytes</var>] [-M<var>max</var>] [-m<var>min</var>] [-o<var>ofile</var>] <var>nx</var> <var>ny</var> <var>nz</var> 
+</code>
+</pre>
+
+      <h2>Description</h2>
+
+      <p><b>floatstohdf</b> reads a stream of floating point numbers
+	from the standard input, and saves the values as an 
+	<A HREF="http://hdf.ncsa.uiuc.edu/index.html">HDF</A> Scientific
+	Dataset representing a single 3D grid.  The X, Y, and Z
+	dimensions of the grid are given by <var>nx</var>,
+	<var>ny</var>, and <var>nz</var>.  By default, the input stream
+	is assumed to be floats in ascii format; new lines are ignored.
+	The <b>-b</b> switch (see below) can be used to specify a binary
+	input stream.
+
+      <p>The program finds and stores minimum and maximum values for the
+	data.  These values may then be used by other programs (for example
+	<A HREF="http://www.psc.edu/Packages/VFleet_Home">VFleet</A>).  The
+        <b>-M</b> and <b>-m</b> switches can be used to specify these values.
+
+      <p>The following options exist:
+
+      <dl compact>
+	<dt><b>-l<var>label</var></b> 
+	<dd>Attach the given string to
+	the data as a label.  For example, "density" might be a
+	typical label string.
+
+	<dt><b>-u<var>units</var></b>
+	<dd>Attach the given string to specify the units of the data.
+	For example, "kg/m^3" might be a typical units string.
+
+	<dt><b>-f<var>format</var></b> 
+	<dd>Attach the given string to
+	specify the Fortran format to be used in printing the data.
+	For example, "f10.4" might be a typical format string.
+
+	<dt><b>-c<var>coordsys</var></b> 
+	<dd>Attach the given string
+	to specify the coordinate system in which the data is defined.
+	For example, "cartesian" might be a typical coordinate system
+	string.  
+
+	<dt><b>-b</b>[<b>Fortran</b>|<b>C</b>] 
+	<dd>Rather
+	than the default ascii input stream, expect a binary input
+	stream.  If <b>Fortran</b> (or at least F) is specified, the
+	program will make a valiant attempt to compensate for Fortran
+	binary file record structure and read raw data written from
+	Fortran.  If <b>C</b> is specified (the default), the program
+	will expect binary floating point numbers as written from the
+	C language.  
+
+	<dt><b>-s<var>hdrbytes</var></b>
+	<dd>If in binary C mode, skip <var>hdrbytes</var> bytes at the
+	beginning of the file.
+
+	<dt><b>-M<var>max</var></b>
+	<dd>Use the given value as the maximum of the dataset.
+
+	<dt><b>-m<var>min</var></b>
+	<dd>Use the given value as the minimum of the dataset.
+
+	<dt><b>-o<var>ofile</var></b> 
+	<dd>Specify an
+	ascii string giving the filename of the output file.  If not
+	specified, the file produced is named <em>floats.hdf</em>.
+      </dl>
+
+      <p><strong>Note</strong> that in HDF Datasets, the Z index varies
+	fastest.  This means that successive planes of data (defined by
+	adjacent blocks in the input file) represent slices in planes of
+	constant X.  The X dimension is thus the number of slices present,
+	rather than the (perhaps more intuitive) Z dimension.  
+
+      <p><strong>Note</strong> that this program expects data in C
+	language array order, that is, with the last array dimension
+	varying fastest.  If the input datastream was written from a
+	Fortran language array, in which the first index varies fastest,
+	the translation process will change the coordinate system of the
+	data from right handed to left handed (or vice versa).
+
+
+      <h2>Examples</h2>
+      
+      <p>
+      <blockquote>
+	  <pre>floatstohdf -o<var>outfile</var> <var>xdim</var> <var>ydim</var> <var>zdim</var> &lt <var>infile</var></pre>
+      </blockquote>
+      will read <var>xdim</var>*<var>ydim</var>*<var>zdim</var> floats from the
+      filename specified as <var>infile</var> and output an HDF file of the
+      given name <var>outfile</var> containing the data.  The input file is
+      assumed to consist of ascii representations of floats with arbitrary
+      line breaks.
+
+      <p>A dataset consisting of 100 planes of data, each plane
+	being 200 by 300 voxels, would be arranged in the input file as a
+	series of 100 blocks of data, each block representing a plane.  Each
+	block in turn would consist of 200 rows of data, each 300 data
+	elements long.  The appropriate <b>floatstohdf</b> command to convert
+	such a dataset to HDF format would be:
+
+      <blockquote>
+	  <pre><code>floatstohdf -ooutfile.hdf 100 200 300 &lt infile.ascii</code></pre>
+      </blockquote>
+
+      <p>If the input file was a Fortran raw binary file with the same
+      data order rather than an ascii format file, the appropriate
+      command would be:
+
+      <blockquote>
+	  <pre><code>floatstohdf -bF -ooutfile.hdf 100 200 300 &lt infile.raw</code></pre>
+      </blockquote>
+
+      <p>The Fortran program which generated the binary file might have 
+	saved the data in Fortran array order, however.  If so, the data
+	would need to be read as follows:
+
+      <blockquote>
+	  <pre><code>floatstohdf -bF -ooutfile.hdf 300 200 100 &lt infile.raw</code></pre>
+      </blockquote>
+
+      This array order ambiguity is often best resolved by experiment.
+
+      <hr>
+      <address><a href="mailto:welling@seurat.psc.edu">J. Welling</a></address>
+<!-- Created: Thu Jul 11 12:25:04 EDT 1996 -->
+<!-- hhmts start -->
+Last modified: Mon Jul 15 16:38:58 EDT 
+<!-- hhmts end -->
+  </body>
+</html>

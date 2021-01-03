@@ -1,0 +1,126 @@
+<title>VFleet Known Bugs and Work-Arounds</title>
+<H1>VFleet Known Bugs and Work-Arounds</H1>
+
+<P>This document lists known bugs and work-arounds for 
+<a href="http://pscinfo.psc.edu/Packages/VFleet_Home">VFleet</a>.
+
+<H3>Known Bugs for VFleet Version 1.1</H2>
+
+<dl>
+<dt><b>Transfer Function Window Confusion Bug</b>
+<dd>On some platforms, for example the DEC Alpha under OSF, the mechanism
+which packs the transfer function control elements into the transfer function
+window may not work properly.  This is a difficulty with Motif.  The 
+work-around is to use the <em>Show Debugger Menu</em> button in the 
+<em>File</em> menu to
+create a <em>Debug</em> menu.  The <em>Resize Tfun Dialog</em> item in 
+that menu can then
+be used to (mostly) straighten out the transfer function dialog.
+
+<dt><b>Rotation Is About Center of Object, Not Center of View</b>
+<dd>Rotating the dataset using the "track ball" window causes rotation
+about the center of the volume, even if the camera view is shifted
+off-center.  The only work-around is to change the view using the
+camera controls rather than the "track ball".
+
+<dt><b>Rendering Artifacts at High Zooms</b>
+<dd>If camera motion is used to zoom way in to a small number of opaque
+pixels and trilinear interpolation is turned on, rendering artifacts 
+appear.  This is apparently a quantization
+error problem, and is viewing-direction dependent.  This problem can
+generally be avoided by slight changes in viewing direction.  Alternately,
+don't zoom so far in.
+
+<dt><b>Hither and Yon Planes are Curved</b>
+<dd>If the hither and yon distances are used to slice through the volume,
+the cut surfaces will be segments of a sphere in perspective projection
+mode.  This is done to save on rendering time.  If this is annoying, possible
+solutions include using a smaller fovea angle and rendering in parallel
+projection mode.
+
+<dt><b>Lighting Errors on Flat Surfaces</b>
+<dd>Lighting errors can occur when rendering large flag surfaces, for 
+example the surfaces of blocks.  Work-arounds include turning lighting
+off and turning trilinear interpolation on.
+
+<dt><b>Mippmapping Sometimes Doesn't Happen</b>
+<dd>If 3D mipmapping is turned on and the fovea angle is high, VFleet
+may decide that mipmapping is not needed at the beginning of a ray and
+then fail to start using it later on when the ray has diverged from its
+neighbors.  This can result in data being "missed" by the rays as they
+diverge.  Work-arounds include using a smaller fovea, using a larger
+hither distance, and using parallel projection.  This problem is not
+likely to actually occur much.
+
+<dt><b>Mipmapping Doesn't Respect Voxel Aspect Ratio</b>
+<dd>The 3D mipmapping algorithm assumes that each voxel is roughly cubic.
+Thus if 3D mipmapping is turned on with a dataset with very non-cubic
+voxels, artifacts can result.  The work-around is to not use this option
+with such datasets, or to resample the data to have a voxel aspect ratio
+closer to unity.
+
+<dt><b>Tcl Script Crash Error</b>
+<dd>Some Tcl scripts, which contain loops that execute very quickly, cause
+VFleet to crash.  This problem is not repeatable, and may in fact no longer
+occur.  If you have a Tcl script that does this in a repeatable fashion, 
+please send it in!  Work-arounds consist of making small changes to the
+script, for example saving the current image to a non-writable location
+in each loop iteration.</dd>
+
+<dt><b>Entering Text in Number Slots of Dialogs</b>
+<dd>Some dialog entry areas require a number for input.  Typing text into
+these slots can under some circumstances confuse VFleet.  The work-around
+is to not do that.</dd>
+
+<dt><b>Opacity Varies for Time Evolutions using Gradient Table Tfuns</b>
+<dd>The Gradient Table transfer function type produces a voxel opacity
+which is weighted by the local gradient magnitude, relative to the maximum
+gradient <em>for the same dataset</em>.  This makes the function easy to
+use, but when doing time evolutions the maximum gradient can change with
+time.  This causes the opacity returned by this tfun to vary, causing
+the image to fade in and out.  
+
+</dl>
+
+
+
+<H3>Known Bugs for VFleet Version 1.0</H3>
+
+<dl>
+<dt><b>Motif Window Sizing Bug #1</b>
+<dd>This bug arises in constructing complex transfer functions by loading
+parts from files into an existing SumTransferFunction.  When the new
+sub-transfer-function of the SumTransferFunction is loaded, the Transfer
+Function Editor window may not enlarge to show the new parts.  The new parts
+are actually there;  they are just not visible or editable.  The work-around
+is to add the new parts, save the whole transfer function to a file, and
+then reload the whole transfer function (replacing the existing, half-hidden
+transfer function).  This bug will only arise when constructing transfer
+functions multiple levels deep.  (This bug is fixed in version 1.1)</dd>
+<dt><b>Motif Window Sizing Bug #2</b>
+<dd>The window size setting options in the Image pulldown menu sometimes
+fail to produce a window of the currect size.  Two work-arounds are possible.
+The first is to use the menu to set the window size before loading the
+first data volume.  The second work-around is to simply resize the window
+by dragging the corner of the window frame.  The current window size 
+appears in the message displayed when a render is initiated.  (This bug is
+fixed in version 1.1)</dd>
+<dt><b>Tcl Script Crash Error</b>
+<dd>Some Tcl scripts, which contain loops that execute very quickly, cause
+VFleet to crash.  This problem is not repeatable, and may in fact no longer
+occur.  If you have a Tcl script that does this in a repeatable fashion, 
+please send it in!  Work-arounds consist of making small changes to the
+script, for example saving the current image to a non-writable location
+in each loop iteration.</dd>
+<dt><b>Entering Text in Number Slots of Dialogs</b>
+<dd>Some dialog entry areas require a number for input.  Typing text into
+these slots can under some circumstances confuse VFleet.  The work-around
+is to not do that.</dd>
+</dl>
+
+<ADDRESS>
+VFleet Known Bugs and Work-Arounds 
+/ Joel Welling, Pittsburgh Supercomputing Center
+/ welling@psc.edu
+</ADDRESS>
+

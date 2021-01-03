@@ -1,0 +1,9 @@
+!*Crystal.uil - a UIL interface for a crystal ball widget.
+
+! resources
+
+value
+    CrysNViewMatrix : private argument ('ViewMatrix', any);! viewing matrix
+    CrysNAllowThrowing : private argument ('AllowThrowing', boolean);
+
+procedure CrystalCreate();

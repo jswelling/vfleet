@@ -1,0 +1,39 @@
+!
+! Error dialog hierarchy follows
+!
+
+procedure destroy_dialog_cb;
+	  error_cb(string);
+identifier error_text_id;
+identifier warning_text_id;
+identifier info_text_id;
+
+object error_dialog : XmErrorDialog {
+  arguments {
+    XmNdialogTitle= 'Error!';
+    XmNmessageString= error_text_id;
+  };
+  callbacks {
+    XmNokCallback = procedure destroy_dialog_cb();
+  };
+};
+
+object warning_dialog : XmWarningDialog {
+  arguments {
+    XmNmessageString= warning_text_id;
+  };
+  callbacks {
+    XmNokCallback = procedure destroy_dialog_cb();
+    XmNcancelCallback = procedure destroy_dialog_cb();
+  };
+};
+
+object info_dialog : XmInformationDialog {
+  arguments {
+    XmNmessageString= info_text_id;
+  };
+  callbacks {
+    XmNokCallback = procedure destroy_dialog_cb();
+  };
+};
+

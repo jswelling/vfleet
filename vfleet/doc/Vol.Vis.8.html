@@ -1,0 +1,41 @@
+<title>Volume Visualization - Page 8</title>
+
+<h1>Ray Casting</h1>
+<hr>
+<p>
+<i>Ray casting</i> is a backward rendering method.
+<p>
+<ul>
+<li>For each screen 
+<i>pixel</i>, a ray is shot into the sample volume. Color and opacity 
+are numerically integrated along the ray, until it leaves the volume 
+or reaches an opacity of 1.0. The resulting opacity and color are 
+assigned to the pixel.<p>
+<img src="Vol.Vis.pg8.gif">
+<p>
+Accuracy of numerical integration is one factor affecting rendering 
+time and image accuracy.
+<ul>
+<li>Ideally, you can step along the ray by small increments, using the 
+trilenearly interpolated color and opacity at each sample point.
+<li>Alternately, take bigger steps and assume color and opacity are 
+constant within a voxel.
+</ul>
+<li>In general, one ray per pixel is enough (unlike ray tracing of 
+surface data). 
+<li>Ray casting is accurate but slow.  Tricks to speed it up:
+<ul>
+<li>Skip empty or constant parts of the volume.
+<li>Stop before opacity reaches 1.0.
+<li>Adaptive sampling of screen.
+</ul>
+<li><em>Shear-Warp</em> algorithms are a way to accelerate ray casting
+by shearing the volume so the ray stepping algorithm is simple, then
+warping the resulting image to correct for the effects of the shear.
+</ul>
+<p>
+<hr>
+<p>
+<a href=Vol.Vis.0.html><img src="txtttl.gif"></a>
+<a href=Vol.Vis.7.html><img src="txtpre.gif"></a>
+<a href=Vol.Vis.9.html><img src="txtnxt.gif"></a>

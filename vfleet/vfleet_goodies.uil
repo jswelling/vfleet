@@ -1,0 +1,80 @@
+!
+!	This module provides functions in the 'slices' and 'image' 
+!	menues of VFleet
+!
+
+procedure
+	photocopy_cb();
+	create_x_sliceviewer_cb();
+	create_y_sliceviewer_cb();
+	create_z_sliceviewer_cb();
+	image_size_cb(integer);
+
+object slices_pd : XmPulldownMenu {
+    controls {
+	XmPushButton create_x_slice_pb;
+	XmPushButton create_y_slice_pb;
+	XmPushButton create_z_slice_pb;
+    };
+};
+
+object create_x_slice_pb : XmPushButton {
+    arguments { XmNlabelString = "View X Slice"; 
+	XmNmnemonic = keysym('X'); };
+    callbacks { XmNactivateCallback = procedure create_x_sliceviewer_cb(); };
+};
+	
+object create_y_slice_pb : XmPushButton {
+    arguments { XmNlabelString = "View Y Slice"; 
+	XmNmnemonic = keysym('Y'); };
+    callbacks { XmNactivateCallback = procedure create_y_sliceviewer_cb(); };
+};
+	
+object create_z_slice_pb : XmPushButton {
+    arguments { XmNlabelString = "View Z Slice"; 
+	XmNmnemonic = keysym('Z'); };
+    callbacks { XmNactivateCallback = procedure create_z_sliceviewer_cb(); };
+};
+	
+object image_pd : XmPulldownMenu {
+    controls {
+	XmPushButton photocopy_pb;
+	XmPushButton size_256_256_pb;
+	XmPushButton size_300_300_pb;
+	XmPushButton size_512_512_pb;
+	XmPushButton size_320_240_pb;
+	XmPushButton size_640_480_pb;
+    };
+};
+
+object photocopy_pb : XmPushButton {
+    arguments { XmNlabelString = "Tear Off Image"; 
+	XmNmnemonic = keysym('T'); };
+    callbacks { XmNactivateCallback = procedure photocopy_cb(); };
+};
+	
+object size_256_256_pb : XmPushButton {
+    arguments { XmNlabelString = "256x256"; };
+    callbacks { XmNactivateCallback = procedure image_size_cb(0); };
+};
+	
+object size_300_300_pb : XmPushButton {
+    arguments { XmNlabelString = "300x300"; };
+    callbacks { XmNactivateCallback = procedure image_size_cb(1); };
+};
+	
+object size_512_512_pb : XmPushButton {
+    arguments { XmNlabelString = "512x512"; };
+    callbacks { XmNactivateCallback = procedure image_size_cb(2); };
+};
+	
+object size_320_240_pb : XmPushButton {
+    arguments { XmNlabelString = "320x240"; };
+    callbacks { XmNactivateCallback = procedure image_size_cb(3); };
+};
+	
+object size_640_480_pb : XmPushButton {
+    arguments { XmNlabelString = "640x480"; };
+    callbacks { XmNactivateCallback = procedure image_size_cb(4); };
+};
+	

@@ -1,0 +1,252 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Running VFleet on SGI/Cray MPPs</title>
+  </head>
+
+  <body>
+      <h1>Running VFleet on SGI/Cray MPPs</h1>
+
+<h2>What Is VFleet?</h2>
+This document is part of the documentation for the 
+<a href="http://www.psc.edu/Packages/VFleet_Home">VFleet</a>
+distributed volume renderer.
+
+<h2>SGI/Cray T3D</h2>
+<h3>Building for the T3D</h3>
+A special low-precision square root routine called <def>SQRTI</def> is
+used by the T3D and T3E versions of VFleet.  This routine is not
+distributed with the VFleet source because it is owned by SGI/Cray.
+It was available in the unsupported Cray <em>Benchlib</em> product.
+If you do not have access to that product, contact
+us at the address below and we will pass the module to licensed SGI/Cray 
+sites.
+<p>
+The T3D version of VFleet requires a special executable, called 
+<def>vrenserver_t3d</def>.  A separate name is needed to distinguish
+it from the version that might run on the host machine.  This
+executable is built separately.  To build the T3D version of VFleet,
+build first on the host machine using <kbd>Makefile_cray</kbd>,
+then use <kbd>Makefile_t3d</kbd> to build vrenserver_t3d.
+<h3>General Instructions</h3>
+There is often a lot of confusion in getting PVM running between the T3D
+and the outside world.  The following steps should create a PVM virtual
+machine extending to a remote workstation, and start VFleet in distributed
+mode across the system.
+<p>
+
+<ol>
+<li> Make sure the following environment variables are set:
+<ul>
+<li>MPP_AGENT_PLOCK=none
+<li>MPP_NPES= (however many PEs you plan to use in your configuration)
+<li>PVM_ROOT= (whatever the appropriate root structure for your machine is)
+<li>PVM_ARCH=CRAY
+<li>PVM_PE_LIST=all
+<li>PVM_EXPORT=DISPLAY
+<li>DISPLAY= (the display of the workstation where you will be running the GUI)
+</ul>
+<p>
+<li> Follow the general instructions for starting up VFleet found in the
+WWW documentation, starting the service manager on the Cray and using
+a list of rendering server machines consisting of a series of n lines,
+all saying T3D, where n is ${MPP_NPES}.  For example, to run on 8 PEs with
+the GUI running on a workstation named myhost, the startup procedure would
+look like this: (<kbd>%</kbd> is the Cray's prompt)
+
+<pre>
+<kbd>
+% pvm
+pvm> add myhost
+pvm> quit
+
+% cat t3d_hosts_8.t
+T3D
+T3D
+T3D
+T3D
+T3D
+T3D
+T3D
+T3D
+
+% servman -lmyhost -rt3d_hosts_8.t &
+</kbd>
+</pre>
+At this point a small window associated with the logserver should appear
+on the workstation screen, and the PVM console command <kbd>ps -a</kbd>
+should show <em>servman</em>, <em>logserver</em>, and the PVM group
+daemon running.  (<em>servman</em> will not appear by name because it
+is started from the command line).
+<p>
+
+<li>Then, on the workstation myhost, do:
+<pre>
+<kbd>
+% vfleet -n 8
+</kbd>
+</pre>
+</ol>
+
+<p>
+This should start things up.
+<p>
+<h3>Hints and Tricks</h3>
+The T3D environment consists of a host like an SGI/Cray C90, an MPP attached
+to the host, and probably a remote workstation on which the GUI will run.
+The situation is complicated by the fact that the Cray PVM software does
+not share the PVM group environment between the host and the MPP.  Because
+VFleet uses groups to allow processes to find each other, this presents a
+problem.
+<p>
+The solution used by VFleet is that the Service Manager <em>servman</em>
+writes its PVM tid to a file named 
+<em>/tmp/vfleet_group_kludge.nnnn</em>, which nnnn is the UID of the user.
+The T3D processes then read this file to learn the tid of the service manager,
+and can open communication.
+<p>
+On the T3D VFleet uses shmem-type communication where speed is important,
+in passing images up the renderer hierarchy for compositing.  The renderer
+structure is set up using PVM calls between the Service Manager and the
+rendering servers;  then all rendering servers other than the one on
+PE0 stop listening for messages from the world beyond the T3D.  Since
+listening to the outside world involves a lot of system overhead, this
+greatly improves efficiency.  The PVM_PE_LIST environment variable must
+be set to "all" because of the needs of the start-up phase, 
+but the change in listening
+strategies seems to remove most of the overhead of this state once 
+rendering has begun.
+<h2>Running on the SGI/Cray T3E</h2>
+
+<h3>Building for the T3E</h3>
+Because Cray's makedepend doesn't (currently) understand the
+Cray "modules" mechanism, the process of making dependencies will
+not work correctly unless all the relevent include directories are
+explicitly present.  This requires finding the directories 
+under /opt/ctl where the X Windows and shmem include files reside,
+and adding them explicitly to the COPTIONS line in config.mk .  For
+example, on our system the correct line is:
+<pre>
+<kbd>
+COPTIONS=  -I/opt/ctl/cvt/cvt/include -I/opt/ctl/craylibs/3.0.0.0/include
+</kbd>
+</pre>
+Other than this, the build process proceeds as it would on any other
+Unix machine.
+<p>
+<h3>General Instructions</h3>
+VFleet has been run under the <em>MPT</em> version of PVM, available
+in the <em>mpt</em> software module.  This system lacks support for
+groups beyond the T3E itself, however.  This means that if the user
+interface is to be run on a remote machine, VFleet must be manually
+told the PVM tid of the Service Manager.  The Service Manager writes
+out its tid at start-up;  the <em>-S</em> command line option can be 
+used to give this information to the VFleet user interface.  Note that
+this number is being written and read in hex.
+<p>
+<ol>
+<li> Make sure the following environment variables are set:
+<ul>
+<li>PVM_ROOT= (whatever the appropriate root structure for your machine is)
+<li>PVM_ARCH=CRAY
+<li>PVM_PE_LIST=all
+<li>PVM_EXPORT=DISPLAY
+<li>DISPLAY= (the display of the workstation where you will be running the GUI)
+</ul>
+<p>
+<li> Follow the general instructions for starting up VFleet found in the
+WWW documentation, starting the service manager on the Cray and using
+a list of rendering server machines consisting of a series of n lines,
+all saying T3E, where n is ${MPP_NPES}.  For example, to run on 8 PEs with
+the GUI running on a workstation named myhost, the startup procedure would
+look like this: (<kbd>%</kbd> is the Cray's prompt)
+
+<pre>
+<kbd>
+% pvm
+pvm> add myhost
+pvm> quit
+
+% cat t3e_hosts_8.t
+T3E
+T3E
+T3E
+T3E
+T3E
+T3E
+T3E
+T3E
+
+% servman -lmyhost -rt3e_hosts_8.t &
+</kbd>
+</pre>
+<p>
+<em>servman</em> will output a line similar to the following:
+<pre>
+<kbd>
+baseNet initialized; name and instance &lt;ServiceManager (tid 60000)&gt; 0
+</kbd>
+</pre>
+The number in parenthesis, 60000 in this example, is the Service Manager
+tid referred to in the next step.
+<p>
+At this point a small window associated with the logserver should appear
+on the workstation screen, and the PVM console command <kbd>ps -a</kbd>
+should show <em>servman</em>, <em>logserver</em>, and the PVM group
+daemon running.  (<em>servman</em> will not appear by name because it
+is started from the command line).
+
+<p>
+
+<li>Then, on the workstation myhost, do:
+<pre>
+<kbd>
+% vfleet -n 8 -S xxxxx
+</kbd>
+</pre>
+where xxxxx is the Service Manager tid number, written to the console
+when <em>servman</em> is started up.
+</ol>
+
+<p>
+This should start things up.
+
+<h3>Hints and Tricks</h3>
+
+<p>
+There currently (6/97) appears to be a bug in SGI/Cray MPT PVM that can
+cause system errors when VFleet exits.  The problem is that a PVM console
+<kbd>halt</kbd> command does not kill processes started from the command
+line.  The VFleet Service Manager is such a process, and since it waits
+listening for PVM messages it will produce a long string of system errors
+when the rest of PVM exits.
+<p>
+To avoid this problem, exit any processes started from the command line
+before halting PVM.  This can be done by exiting the VFleet UI via the
+"File/Exit" menu item, and then foregrounding the Service Manager process
+and killing it with control-C.  If you forget to do this and are rewarded
+with an endless stream of System Error messages, the thing to do is to
+find the pid of the Service Manager process and kill it with the Unix
+<kbd>kill -9</kbd> command.
+<p>
+On the T3E VFleet uses shmem-type communication where speed is important,
+in passing images up the renderer hierarchy for compositing.  The renderer
+structure is set up using PVM calls between the Service Manager and the
+rendering servers;  then all rendering servers other than the one on
+PE0 stop listening for messages from the PVM daemon.  Since
+listening to the outside world involves a lot of system overhead, this
+greatly improves efficiency.  The PVM_PE_LIST environment variable must
+be set to "all" because of the needs of the start-up phase, 
+but the change in listening
+strategies seems to remove most of the overhead of this state once 
+rendering has begun.
+
+
+      <hr>
+      <address><a href="mailto:welling@seurat.psc.edu">J. Welling</a></address>
+<!-- Created: Thu Jun 12 19:03:11 EDT 1997 -->
+<!-- hhmts start -->
+Last modified: Thu Jun 26 17:38:10 EDT 
+<!-- hhmts end -->
+  </body>
+</html>

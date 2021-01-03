@@ -1,0 +1,247 @@
+!
+!	This UIL code defines the renderer controls dialog for VFleet
+!
+
+procedure
+        set_renderer_controls_cb();
+        reset_renderer_controls_cb();
+
+value renderer_controls_help_text :
+   "This dialog allows you to set renderer controls.\n" &
+   "\n" &
+   "The Use Lighting toggle controls whether or not any lighting effects " &
+   "are used.  If it is not on, no lighting effects will be included in " &
+   "the rendering process.  This increases speed substantially but makes " &
+   "it more difficult to understand the 3D structure of the data.\n" &
+   "\n" &
+   "The Fast Lighting toggle turns on a fast but somewhat inaccurate " &
+   "lighting algorithm.  When this button is on, lighting is calculated " &
+   "to about 10% accuracy, but the calculation is faster than the " &
+   "more accurate algorithm employed when the button is off.\n" &
+   "\n" &
+   "The Specular Lighting toggle turns on the presence of specular " &
+   "highlights.  This makes the image look shinier and makes curved " &
+   "surfaces easier to understand, but it slows down the rendering " &
+   "process.  If the Fast Lighting toggle is turned on, the specular " &
+   "highlights will be drawn in slightly incorrect places.\n" &
+   "\n" &
+   "The 3D MipMapping toggle turns on three dimensional mipmapping.  This " &
+   "is a feature which compensates for the fact that the distance between " &
+   "traced rays may be greater than the size of a sample voxel by mixing " &
+   "color contributions from averaged groups of voxels into the ray color.  " &
+   "This option will slow things down slightly to no benefit unless you are " &
+   "rendering an image the size of which is smaller than the edge size of " &
+   "your sample volume.  For very large sample volumes or very small " &
+   "images, this option removes some image artifacts and guarantees that " &
+   "tiny bits of color will not be completely missed in the output image.\n" &
+   "\n" &
+   "The Trilinear Interpolation button causes values within each voxel to " &
+   "be calculated by trilinear interpolation, rather than assumed " &
+   "constant.  This slows rendering but produces a much smoother " &
+   "image, especially for low-resolution data volumes.  In Trilinear " &
+   "Interpolation mode, rendering time is very dependent on the setting " &
+   "of the Color Error slider in the Renderer Quality Settings dialog.\n" &
+   "\n" &
+   "The Opacity Scale slider allows you to control the apparent opacity " &
+   "of the data volume.  As the value is set higher the data volume " &
+   "becomes more opaque.\n" &
+   "\n" &
+   "The Set button causes the currently displayed values to take effect.  " &
+   "The Reset button causes the indicators to be reset to their most " &
+   "recently set values.  The Close button closes the dialog (without " &
+   "setting any values), and the Help button produces this message.";
+
+object renderer_controls : XmFormDialog {
+    arguments {
+	XmNdialogTitle = "Renderer Settings";
+    };
+    controls {
+	XmFrame renderer_controls_frame;
+	XmForm renderer_controls_action_area;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure create_cb(k_renderer_controls_id);
+    };
+};
+
+object renderer_controls_frame : XmFrame {
+  arguments {
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNshadowType = XmSHADOW_OUT;
+  };
+  controls {
+    XmForm renderer_controls_form;
+  };
+};
+
+object renderer_controls_action_area : XmForm {
+    arguments { 
+      XmNfractionBase = 7;
+      XmNleftAttachment = XmATTACH_FORM;
+      XmNtopAttachment = XmATTACH_WIDGET;
+      XmNtopWidget = renderer_controls_frame;
+      XmNrightAttachment = XmATTACH_FORM;
+    };
+    controls {
+      XmPushButton renderer_controls_set;
+      XmPushButton renderer_controls_reset;
+      XmPushButton renderer_controls_close;
+      XmPushButton renderer_controls_help;
+    };
+};
+
+object renderer_controls_set : XmPushButton {
+  arguments {
+    XmNlabelString = "Set";
+    XmNmnemonic = keysym('S');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 0;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 1;
+  };
+  callbacks {
+    XmNactivateCallback = procedure set_renderer_controls_cb();
+  };
+};
+
+object renderer_controls_reset : XmPushButton {
+  arguments {
+    XmNlabelString = "Reset";
+    XmNmnemonic = keysym('R');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 2;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 3;
+  };
+  callbacks {
+    XmNactivateCallback = procedure reset_renderer_controls_cb();
+  };
+};
+
+object renderer_controls_close : XmPushButton {
+  arguments {
+    XmNlabelString = "Close";
+    XmNmnemonic = keysym('C');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 4;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 5;
+  };
+  callbacks {
+    XmNactivateCallback = procedure close_dialog_cb();
+  };
+};
+
+object renderer_controls_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNmnemonic = keysym('H');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 6;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 7;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb( renderer_controls_help_text );
+  };
+};
+
+object renderer_controls_form : XmForm {
+    arguments { 
+	XmNfractionBase = 4;
+    };
+    controls {
+	XmScale opac_length_scale;
+	XmToggleButton lighting_on_tb;
+	XmToggleButton fast_lighting_tb;
+	XmToggleButton specular_lighting_tb;
+	XmToggleButton threed_mipmap_tb;
+	XmToggleButton trilinear_interp_tb;
+    };
+};
+
+object opac_length_scale : XmScale {
+  arguments {
+    XmNtitleString = "Opacity Scale";
+    XmNminimum = 1;
+    XmNmaximum = 100;
+    XmNdecimalPoints = 1;
+    XmNvalue = 10;
+    XmNshowValue = true;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = trilinear_interp_tb;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb( k_opac_length_id );
+  };
+};
+
+object lighting_on_tb: XmToggleButton {
+  arguments { 
+    XmNlabelString = "Use Lighting"; 
+    XmNset = true; 
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb( k_use_lighting_id );
+  };
+};
+
+object fast_lighting_tb: XmToggleButton {
+  arguments { 
+    XmNlabelString = "Fast Lighting"; 
+    XmNset = true; 
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = lighting_on_tb;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb( k_fast_lighting_id );
+  };
+};
+
+object specular_lighting_tb: XmToggleButton {
+  arguments { 
+    XmNlabelString = "Specular Lighting"; 
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = fast_lighting_tb;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb( k_specular_lighting_id );
+  };
+};
+
+object threed_mipmap_tb: XmToggleButton {
+  arguments { 
+    XmNlabelString = "3D MipMapping"; 
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = specular_lighting_tb;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb( k_threed_mipmap_id );
+  };
+};
+
+object trilinear_interp_tb: XmToggleButton {
+  arguments { 
+    XmNlabelString = "Trilinear Interpolation"; 
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = threed_mipmap_tb;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb( k_trilinear_interp_id );
+  };
+};
+

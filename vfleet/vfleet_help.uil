@@ -1,0 +1,75 @@
+!
+! Help dialog hierarchy follows
+!
+
+procedure help_cb(string);
+          close_help_cb();
+
+identifier help_text_id;
+
+object help_dialog : XmFormDialog {
+  arguments {
+    XmNdefaultButton = help_dialog_ok_button;
+    XmNdialogTitle = "Help";
+  };
+  controls {
+    XmForm help_dialog_action_area;
+    XmSeparator help_dialog_separator;
+    XmScrolledText help_dialog_text;
+  };
+};
+
+object help_dialog_action_area : XmForm {
+  arguments {
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNfractionBase = 7;
+  };
+  controls {
+    XmPushButton help_dialog_ok_button;
+  };
+};
+
+object help_dialog_ok_button : XmPushButton {
+  arguments {
+    XmNlabelString = "OK";
+    XmNmnemonic = keysym('O');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 3;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 4;
+  };
+  callbacks {
+    XmNactivateCallback=procedure close_help_cb();
+  };
+};
+
+object help_dialog_separator : XmSeparator {
+  arguments {
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNbottomAttachment = XmATTACH_WIDGET;
+    XmNbottomWidget = help_dialog_action_area;
+  };
+};
+
+object help_dialog_text : XmScrolledText {
+  arguments {
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNbottomAttachment = XmATTACH_WIDGET;
+    XmNbottomWidget = help_dialog_separator;
+    XmNeditMode = XmMULTI_LINE_EDIT;
+    XmNeditable = false;
+    XmNcursorPositionVisible = false;
+    XmNvalue = help_text_id;
+    XmNwordWrap = true;
+    XmNscrollHorizontal = false;
+    XmNcolumns = 67;
+    XmNrows = 12;
+  };
+};
+

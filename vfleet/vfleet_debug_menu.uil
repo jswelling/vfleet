@@ -1,0 +1,38 @@
+!
+!	This UIL code supplies the debug menu and related functions for VFleet
+!
+
+procedure
+	show_debugger_controls_cb();
+	debug_shoot_ray_cb();
+	debug_tfunhandler_cb();
+	whack_tfun_dlog_cb();
+
+object debug_pd : XmPulldownMenu {
+    controls {
+	XmToggleButton shoot_tb;
+	XmToggleButton debug_tfunhandler_tb;
+	XmPushButton whack_tfun_dialog_tb;
+    };
+};
+
+object shoot_tb : XmToggleButton {
+    arguments { XmNlabelString = "Shooting Rays"; XmNmnemonic = keysym('S');};
+    callbacks { XmNvalueChangedCallback = procedure debug_shoot_ray_cb(); };
+};
+
+object debug_tfunhandler_tb : XmToggleButton {
+    arguments { XmNlabelString = "TfunHandler"; XmNmnemonic = keysym('T');};
+    callbacks { XmNvalueChangedCallback = procedure debug_tfunhandler_cb(); };
+};
+
+object whack_tfun_dialog_tb : XmPushButton {
+    arguments {
+	XmNlabelString= "Resize TFun Dialog";
+	XmNmnemonic= keysym('W');
+	};
+    callbacks {
+	XmNactivateCallback= procedure whack_tfun_dlog_cb();
+	};
+};
+

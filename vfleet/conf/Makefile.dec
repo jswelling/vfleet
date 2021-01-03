@@ -1,0 +1,17 @@
+CXX= CC
+CC= cc
+CPP= $(CC) -E
+COMP_ID_DEFS= -DATTCC 
+ENV_CFLAGS= -DDEC_PMAX -O2
+ARCH_LIBOPTIONS= -lgen
+
+UILCC=uil
+
+RM = rm
+AR = ar rus
+RANLIB = ranlib
+MAKEDEPEND = /usr/bin/X11/makedepend
+
+XLIBOPTIONS= -L/usr/local/X11R5/lib -lMrm -lXm -lXt -lXmu -lX11 -ldnet
+
+

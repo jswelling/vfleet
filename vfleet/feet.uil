@@ -1,0 +1,586 @@
+module feet
+    version = 'v1.0'
+    names = case_sensitive
+    character_set=iso_latin1
+    objects = {
+	XmPushButton = gadget;
+	XmToggleButton = gadget;
+	XmSeparator = gadget;
+    }
+
+include file 'crystal.uil';
+
+value
+        k_help_id : 1;
+        k_open_id : 2;
+        k_canvas_id : 3;
+        k_renderer_controls_id : 4;
+	k_debugger_controls_id : 5;
+	k_logger_id : 6;
+	k_dataset_list_id : 7;
+	k_photo_id : 8;
+
+	control_background : color('#607080');
+	control_foreground : color('LightGoldenrod');
+	logger_background : color('#102030');
+	logger_foreground : color('LightGoldenrod');
+
+	hdf : 1;
+
+procedure
+        create_cb(integer);
+        help_cb(compound_string);
+ 	canvas_resize_cb();
+ 	canvas_expose_cb();
+	open_cb();
+	open_file_cb();
+        exit_cb();
+	do_render_cb();
+	show_renderer_controls_cb();
+	show_debugger_controls_cb();
+	debug_shoot_ray_cb();
+	canvas_pointer_down_cb();
+	set_opac_limit_cb();
+	set_color_comp_error_cb();
+	set_grad_comp_error_cb();
+	set_grad_mag_error_cb();
+	photocopy_cb();
+	dataset_edit_cb();
+	set_filetype_cb(integer);
+
+value help_text :
+        compound_string("Feet version 1.0", separate=true) &
+        compound_string(" ", separate=true) &
+        compound_string("By Joel Welling and Rob Earhart", separate=true) &
+        compound_string(" ", separate=true) &
+        compound_string("This will someday be a fine tool for", separate=true) &
+        compound_string("distributed volume rendering.", separate=true) &
+        compound_string(" ", separate=true) &
+        compound_string("Copyright 1993, Carnegie Mellon University.");
+
+value file_help_text :
+	compound_string("  Use this dialog to select a datavolume to open.", separate=true) &
+	compound_string(" ", separate=true) &
+	compound_string("  Currently, we only support HDF; this will change soon.", separate=true) &
+	compound_string(" ");
+
+value no_d_loaded_dlog_text :
+	compound_string("Error: You have to load a file first.", separate=true) &
+	compound_string("(Use the Open button in the File menu.)");
+
+object app_main : XmMainWindow {
+    controls {
+        XmMenuBar bar;
+        XmForm work;
+        unmanaged XmInformationDialog help_box;
+        unmanaged XmFileSelectionDialog file_box;
+	unmanaged XmFormDialog renderer_controls;
+    };
+    callbacks {
+        XmNhelpCallback=procedure help_cb(help_text);
+    };
+};
+
+
+object help_box : XmInformationDialog {
+    arguments {
+        XmNdialogTitle = "Help";
+	XmNmessageAlignment = XmALIGNMENT_CENTER;
+    };
+    callbacks {
+        XmNhelpCallback=procedure help_cb(help_text);
+        MrmNcreateCallback = procedure create_cb(k_help_id);
+    };
+};
+
+object file_box : XmFileSelectionDialog {
+    arguments {
+        XmNdialogTitle = "Open a File";
+        XmNautoUnmanage = true;
+    };
+    controls {
+	XmOptionMenu file_type_controls;
+    };
+    callbacks {
+        XmNhelpCallback=procedure help_cb(file_help_text);
+        MrmNcreateCallback = procedure create_cb(k_open_id);
+	XmNokCallback=procedure open_file_cb();
+    };    
+};
+
+object file_type_controls : XmOptionMenu {
+    arguments {
+	XmNlabelString = "File Type:";
+    };
+    controls {
+	XmPulldownMenu file_type_pd;
+    };
+};
+
+object file_type_pd : XmPulldownMenu {
+    controls {
+	XmPushButton file_type_hdf;
+    };
+};
+
+object file_type_hdf : XmPushButton {
+    arguments {
+	XmNlabelString = "HDF";
+    };
+    callbacks {
+	XmNactivateCallback = procedure set_filetype_cb(hdf);
+    };
+};
+
+object bad_file_dlog : XmErrorDialog {
+    arguments {
+	XmNdialogTitle = "Error Opening File";
+	XmNmessageString = compound_string("Error: that file doesn't appear to exist.", separate=true);
+    };
+};
+
+object no_d_loaded_dlog : XmErrorDialog {
+    arguments {
+	XmNdialogTitle = "Error";
+	XmNmessageString = no_d_loaded_dlog_text;
+    };
+};
+
+object renderer_controls : XmFormDialog {
+    arguments {
+	XmNdialogTitle = "Quality Controls";
+    };
+    controls {
+	XmFrame renderer_controls_frame;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure create_cb(k_renderer_controls_id);
+    };
+};
+
+object renderer_controls_frame : XmFrame {
+    arguments {
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_FORM;
+    };
+    controls {
+	XmForm renderer_controls_form;
+    };
+};
+
+
+object renderer_controls_form : XmForm {
+    arguments { 
+	XmNfractionBase = 4;
+    };
+    controls {
+	XmScale opac_lim_in;
+	XmSeparator control_item_sep_1;
+	XmScale color_comp_in;
+	XmSeparator control_item_sep_2;
+	XmScale grad_comp_in;
+	XmSeparator control_item_sep_3;
+	XmScale grad_mag_in;
+    };
+};
+
+object control_item_sep_1 : XmSeparator {
+    arguments {
+	XmNorientation = XmVERTICAL;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_POSITION;
+	XmNleftPosition = 1;
+    };
+};
+
+object control_item_sep_2 : XmSeparator {
+    arguments {
+	XmNorientation = XmVERTICAL;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_POSITION;
+	XmNleftPosition = 2;
+    };
+};
+
+object control_item_sep_3 : XmSeparator {
+    arguments {
+	XmNorientation = XmVERTICAL;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_POSITION;
+	XmNleftPosition = 3;
+    };
+};
+
+object opac_lim_in : XmScale {
+    arguments {
+	XmNtitleString = "Opacity Limit";
+	XmNminimum = 0;
+	XmNmaximum = 100;
+	XmNdecimalPoints = 2;
+	XmNvalue = 90;
+	XmNshowValue = true;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_POSITION;
+	XmNrightPosition = 1;
+	XmNbottomAttachment = XmATTACH_FORM;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure set_opac_limit_cb();
+	XmNvalueChangedCallback = procedure set_opac_limit_cb();
+    };
+};
+
+object color_comp_in : XmScale {
+    arguments {
+	XmNtitleString = "Color Comp Error";
+	XmNminimum = 0;
+	XmNmaximum = 100;
+	XmNdecimalPoints = 2;
+	XmNvalue = 5;
+	XmNshowValue = true;
+	XmNleftAttachment = XmATTACH_WIDGET;
+	XmNleftWidget = control_item_sep_1;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_POSITION;
+	XmNrightPosition = 2;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNprocessingDirection = XmMAX_ON_BOTTOM;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure set_color_comp_error_cb();
+	XmNvalueChangedCallback = procedure set_color_comp_error_cb();
+    };
+};
+
+object grad_comp_in : XmScale {
+    arguments {
+	XmNtitleString = "Grad Comp Error";
+	XmNminimum = 0;
+	XmNmaximum = 100;
+	XmNdecimalPoints = 2;
+	XmNvalue = 5;
+	XmNshowValue = true;
+	XmNleftAttachment = XmATTACH_WIDGET;
+	XmNleftWidget = control_item_sep_2;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_POSITION;
+	XmNrightPosition = 3;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNprocessingDirection = XmMAX_ON_BOTTOM;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure set_grad_comp_error_cb();
+	XmNvalueChangedCallback = procedure set_grad_comp_error_cb();
+    };
+};
+
+object grad_mag_in : XmScale {
+    arguments {
+	XmNtitleString = "Grad Mag Error";
+	XmNminimum = 0;
+	XmNmaximum = 100;
+	XmNdecimalPoints = 2;
+	XmNvalue = 5;
+	XmNshowValue = true;
+	XmNleftAttachment = XmATTACH_WIDGET;
+	XmNleftWidget = control_item_sep_3;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNprocessingDirection = XmMAX_ON_BOTTOM;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure set_grad_mag_error_cb();
+	XmNvalueChangedCallback = procedure set_grad_mag_error_cb();
+    };
+};
+
+object bar : XmMenuBar {
+    arguments {
+        XmNmenuHelpWidget = XmCascadeButton help;
+    };
+    controls {
+        XmCascadeButton file;
+        XmCascadeButton render;
+	XmCascadeButton control_menu;
+	unmanaged XmCascadeButton debug;
+        XmCascadeButton help;
+    };
+};
+
+object file : XmCascadeButton {
+    arguments { XmNlabelString = "File"; XmNmnemonic = keysym('F'); };
+    controls { XmPulldownMenu file_pd; };
+};
+object file_pd : XmPulldownMenu {
+    controls {
+	XmPushButton open_pb;
+	XmSeparator menu_sep;
+	XmToggleButton debugger_tb;
+	XmSeparator menu_sep;
+        XmPushButton exit_pb;
+    };
+};
+object menu_sep: XmSeparator {
+};
+object open_pb : XmPushButton {
+    arguments { XmNlabelString = "Open"; XmNmnemonic = keysym('O');};
+    callbacks { XmNactivateCallback = procedure open_cb(); };
+};
+object debugger_tb : XmToggleButton {
+    arguments { XmNlabelString = "Show Debugger Menu"; XmNmnemonic = keysym('D');};
+    callbacks { XmNvalueChangedCallback = procedure show_debugger_controls_cb(); };
+};
+object exit_pb : XmPushButton {
+    arguments { XmNlabelString = "Quit"; XmNmnemonic = keysym('Q');};
+    callbacks { XmNactivateCallback = procedure exit_cb(); };
+};
+
+object render : XmCascadeButton {
+    arguments { XmNlabelString = "Render"; XmNmnemonic = keysym('R'); };
+    controls { XmPulldownMenu render_pd; };
+};
+object render_pd : XmPulldownMenu {
+    controls {
+	XmPushButton do_render_pb;
+	XmSeparator menu_sep;
+	XmPushButton show_renderer_controls_pb;
+    };
+};
+object do_render_pb : XmPushButton {
+    arguments { XmNlabelString = "Go!"; XmNmnemonic = keysym('G');};
+    callbacks { XmNactivateCallback = procedure do_render_cb(); };
+};
+object show_renderer_controls_pb : XmPushButton {
+    arguments { XmNlabelString = "Edit Quality Settings"; XmNmnemonic = keysym('Q');};
+    callbacks { XmNactivateCallback = procedure show_renderer_controls_cb(); };
+};
+
+object control_menu : XmCascadeButton {
+    arguments { XmNlabelString = "Controls"; XmNmnemonic = keysym('C'); };
+    controls { XmPulldownMenu controls_pd; };
+};
+object controls_pd : XmPulldownMenu {
+    controls {
+	XmPushButton photocopy_pb;
+    };
+};
+object photocopy_pb : XmPushButton {
+    arguments { XmNlabelString = "Photocopy"; XmNmnemonic = keysym('P'); };
+    callbacks { XmNactivateCallback = procedure photocopy_cb(); };
+};
+	
+object debug : XmCascadeButton {
+    arguments { XmNlabelString = "Debug"; XmNmnemonic = keysym('D'); };
+    controls { XmPulldownMenu debug_pd; };
+    callbacks {
+        MrmNcreateCallback = procedure create_cb(k_debugger_controls_id);
+    };
+};
+object debug_pd : XmPulldownMenu {
+    controls {
+	XmToggleButton shoot_tb;
+    };
+};
+object shoot_tb : XmToggleButton {
+    arguments { XmNlabelString = "Shooting Rays"; XmNmnemonic = keysym('S');};
+    callbacks { XmNvalueChangedCallback = procedure debug_shoot_ray_cb(); };
+};
+
+object help : XmCascadeButton {
+    arguments { XmNlabelString = "Help"; XmNmnemonic = keysym('H'); };
+    controls { XmPulldownMenu help_pd; };
+};
+object help_pd : XmPulldownMenu {
+    controls {
+        XmPushButton help_pb;
+    };
+};
+object help_pb : XmPushButton {
+    arguments { XmNlabelString = "On Feet"; XmNmnemonic = keysym('T');};
+    callbacks { XmNactivateCallback = procedure help_cb(help_text); };
+};
+
+object work : XmForm {
+    controls {
+	XmLabel logger;
+	XmSeparator work_sep;
+	XmFrame control_frame;
+	XmSeparator control_sep;
+	user_defined canvas;
+    };
+};
+
+object control_frame : XmFrame {
+    arguments {
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = work_sep;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNshadowThickness = 5;
+	XmNshadowType = XmSHADOW_OUT;
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+    };
+    controls {
+	XmForm control_form;
+    };
+};
+
+object control_form : XmForm {
+    arguments {
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+	XmNwidth = 200;
+    };
+    controls {
+	XmFrame dataset_list_frame;
+    };
+};
+
+object dataset_list_frame : XmFrame {
+    arguments {
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNleftOffset = 5;
+	XmNtopOffset = 5;
+	XmNrightOffset = 5;
+	XmNbottomOffset = 5;
+    };
+    controls {
+	XmForm dataset_list_form;
+    };
+};
+
+object dataset_list_form : XmForm {
+    arguments {
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+    };
+    controls {
+	XmLabel dataset_list_label;
+	XmScrolledList dataset_list;
+    };
+};
+
+object dataset_list_label : XmLabel {
+    arguments {
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+	XmNlabelString = compound_string("Datasets:");
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNtopAttachment = XmATTACH_FORM;	
+	XmNleftOffset = 3;
+	XmNrightOffset = 3;
+    };
+};
+object dataset_list : XmScrolledList {
+    arguments {
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+	XmNtopAttachment = XmATTACH_WIDGET;
+	XmNtopWidget = dataset_list_label;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNleftOffset = 3;
+	XmNrightOffset = 3;
+	XmNbottomOffset = 3;
+	XmNscrollBarPlacement = XmBOTTOM_LEFT;
+	XmNselectionPolicy = XmEXTENDED_SELECT;
+    };
+    callbacks {
+	XmNdefaultActionCallback = procedure dataset_edit_cb();
+        MrmNcreateCallback = procedure create_cb(k_dataset_list_id);
+    };
+};
+
+object control_sep : XmSeparator {
+    arguments {
+	XmNleftAttachment = XmATTACH_WIDGET;
+	XmNleftWidget = control_frame;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = work_sep;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNorientation = XmVERTICAL;
+    };
+};
+
+object work_sep : XmSeparator {
+    arguments {
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = logger;
+	XmNorientation = XmHORIZONTAL;
+    };
+};
+
+object logger : XmLabel {
+    arguments {
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNresizable = false;
+	XmNbackground = logger_background;
+	XmNforeground = logger_foreground;
+    };
+    callbacks {
+	MrmNcreateCallback = procedure create_cb(k_logger_id);
+    };
+};
+
+object canvas : user_defined procedure CrystalCreate {
+    arguments {
+	XmNresizable = false;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_WIDGET;
+	XmNleftWidget = control_sep;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = work_sep;
+	XmNwidth = 300;
+	XmNheight = 300;
+	XmNresizePolicy = XmRESIZE_ANY;
+    };
+    callbacks {
+	MrmNcreateCallback = procedure create_cb(k_canvas_id);
+	XmNexposeCallback = procedure canvas_expose_cb();
+	XmNarmCallback = procedure canvas_pointer_down_cb();
+    };
+};
+
+object photocopy_dlog : XmFormDialog {
+    arguments {
+	XmNdialogTitle = 'Photocopy';
+    };
+    controls {
+	XmDrawingArea photocopy_da;
+    };
+};
+
+object photocopy_da : XmDrawingArea {
+    arguments {
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_FORM;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure create_cb(k_photo_id);
+    };
+};
+
+end module;
+

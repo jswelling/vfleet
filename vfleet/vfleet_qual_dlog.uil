@@ -1,0 +1,228 @@
+!
+!  This UIL code defines the quality settings dialog for VFleet
+!
+
+procedure
+        set_quality_settings_cb();
+        reset_quality_settings_cb();
+
+value quality_settings_help_text :
+   "This dialog allows you to set renderer quality parameters.\n" &
+   "\n" &
+   "The Opacity Limit slider sets the opacity value at which integration " &
+   "along a ray is terminated.  Since the last bit of opacity can build " &
+   "up very slowly, setting the value below 1.0 will accelerate rendering.\n" &
+   "\n" &
+   "The Opacity Minimum slider sets a minimum value for voxel opacity.  " &
+   "Voxels with opacities below this value are ignored, as if they were " &
+   "completely transparent.  Higher values cause more of the data to be " &
+   "skipped, accelerating rendering.  Low values produce a more accurate " &
+   "image.\n" &
+   "\n" &
+   "The Color Comp Error slider controls the accuracy with which rays " &
+   "traverse the octree approximation hierarchy.  " &
+   "If Color Comp Error is zero, no error is permitted in " &
+   "the approximation of color components (including opacity).  " &
+   "As the slider is moved toward 1.0, more and more error is permitted " &
+   "in these values.\n" &
+   "\n" &
+   "The Set button causes the currently displayed values to take effect.  " &
+   "The Reset button causes the indicators to be reset to their most " &
+   "recently set values.  The Close button closes the dialog (without " &
+   "setting any values), and the Help button produces this message.";
+
+object quality_settings : XmFormDialog {
+    arguments {
+	XmNdialogTitle = "Quality Controls";
+    };
+    controls {
+	XmFrame quality_settings_frame;
+	XmForm quality_settings_action_area;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure create_cb(k_quality_settings_id);
+    };
+};
+
+object quality_settings_frame : XmFrame {
+    arguments {
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNshadowType = XmSHADOW_OUT;
+    };
+    controls {
+	XmForm quality_settings_form;
+    };
+};
+
+object quality_settings_action_area : XmForm {
+    arguments { 
+      XmNfractionBase = 7;
+      XmNleftAttachment = XmATTACH_FORM;
+      XmNtopAttachment = XmATTACH_WIDGET;
+      XmNtopWidget = quality_settings_frame;
+      XmNrightAttachment = XmATTACH_FORM;
+    };
+    controls {
+      XmPushButton quality_settings_set;
+      XmPushButton quality_settings_reset;
+      XmPushButton quality_settings_close;
+      XmPushButton quality_settings_help;
+    };
+};
+
+object quality_settings_set : XmPushButton {
+  arguments {
+    XmNlabelString = "Set";
+    XmNmnemonic = keysym('S');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 0;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 1;
+  };
+  callbacks {
+    XmNactivateCallback = procedure set_quality_settings_cb();
+  };
+};
+
+object quality_settings_reset : XmPushButton {
+  arguments {
+    XmNlabelString = "Reset";
+    XmNmnemonic = keysym('R');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 2;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 3;
+  };
+  callbacks {
+    XmNactivateCallback = procedure reset_quality_settings_cb();
+  };
+};
+
+object quality_settings_close : XmPushButton {
+  arguments {
+    XmNlabelString = "Close";
+    XmNmnemonic = keysym('C');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 4;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 5;
+  };
+  callbacks {
+    XmNactivateCallback = procedure close_dialog_cb();
+  };
+};
+
+object quality_settings_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNmnemonic = keysym('H');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 6;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 7;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb( quality_settings_help_text );
+  };
+};
+
+object quality_settings_form : XmForm {
+    arguments { 
+	XmNfractionBase = 3;
+    };
+    controls {
+	XmScale opac_lim_in;
+!	XmSeparator control_item_sep_1;
+	XmScale opac_min_in;
+!	XmSeparator control_item_sep_2;
+	XmScale color_comp_in;
+    };
+};
+
+object control_item_sep_1 : XmSeparator {
+    arguments {
+	XmNorientation = XmVERTICAL;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_POSITION;
+	XmNleftPosition = 2;
+    };
+};
+
+object control_item_sep_2 : XmSeparator {
+    arguments {
+	XmNorientation = XmVERTICAL;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_POSITION;
+	XmNleftPosition = 4;
+    };
+};
+
+object opac_lim_in : XmScale {
+    arguments {
+	XmNtitleString = "Opacity Limit";
+	XmNminimum = 0;
+	XmNmaximum = 100;
+	XmNdecimalPoints = 2;
+	XmNvalue = 90;
+	XmNshowValue = true;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_POSITION;
+	XmNrightAttachment = XmATTACH_POSITION;
+	XmNleftPosition = 0;
+	XmNrightPosition = 1;
+	XmNbottomAttachment = XmATTACH_FORM;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure create_cb(k_opac_limit_id);
+    };
+};
+
+object opac_min_in : XmScale {
+    arguments {
+	XmNtitleString = "Opacity Minimum";
+	XmNminimum = 1;
+	XmNmaximum = 100;
+	XmNdecimalPoints = 0;
+	XmNvalue = 3;
+	XmNshowValue = true;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_POSITION;
+	XmNrightAttachment = XmATTACH_POSITION;
+	XmNleftPosition = 1;
+	XmNrightPosition = 2;
+	XmNbottomAttachment = XmATTACH_FORM;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure create_cb(k_opac_min_id);
+    };
+};
+
+object color_comp_in : XmScale {
+    arguments {
+	XmNtitleString = "Color Comp Error";
+	XmNminimum = 0;
+	XmNmaximum = 100;
+	XmNdecimalPoints = 2;
+	XmNvalue = 5;
+	XmNshowValue = true;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_POSITION;
+	XmNrightAttachment = XmATTACH_POSITION;
+	XmNleftPosition = 2;
+	XmNrightPosition = 3;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNprocessingDirection = XmMAX_ON_BOTTOM;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure create_cb(k_color_comp_error_id);
+    };
+};
+

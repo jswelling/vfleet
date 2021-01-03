@@ -1,0 +1,32 @@
+<title>Volume Visualization - Page 7</title>
+
+<h1>Splatting</h1>
+<hr>
+<p>
+<i>Splatting</i> (Westover '89) is a forward rendering algorithm.
+<p>
+<ul>
+<li>In the object space, go from the back of the grid to the front. (Front 
+to back will also work).
+<li>For each <i>voxel</i> composite a <i>splat</i> onto the screen. The 
+splat is a generic footprint (usually from a table) whose color and 
+opacity vary with the values for the voxel being dealt with.<p>
+<img src="Vol.Vis.pg7.gif">
+<p>
+This sort of pattern might be used to represent a circular splat. Splat 
+shapes are fairly arbitrary; in theory they should have a sort of 
+Gaussian shape.
+<li>The splat table values multiply the color and opacity of the voxel 
+being composited onto the screen.
+<li>Note that the shape and size of the splat varies with the 
+transformation from object space to image space.
+<li>Splat size (and blurring) increases as the number of image pixels 
+relative to the dataset dimensions.
+<li>It's rather like throwing colored snowballs at the screen.
+</ul>
+<p>
+<hr>
+<p>
+<a href=Vol.Vis.0.html><img src="txtttl.gif"></a>
+<a href=Vol.Vis.6.html><img src="txtpre.gif"></a>
+<a href=Vol.Vis.8.html><img src="txtnxt.gif"></a>

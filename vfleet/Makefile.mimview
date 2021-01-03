@@ -1,0 +1,172 @@
+CC= g++
+#CC= CC
+
+#to use shared memory images (thus easing the job on your XServer, as well
+#as being faster), add -DSHM to the CFLAGS line, and -lXext to LIBOPTIONS.
+
+#note that SHM is *not* recomended under Ultrix, because ultrix is brain-dead
+#when it comes to IPCs.
+
+#when not using SHM (e.g., ultrix :), add -DLOCAL to your CFLAGS, which will
+#prevent the program for storing ximages in pixmaps on a local server. If
+#you're not using SHM, this is a Good Idea.
+
+#flash note: if you *really* want to use shared memory ximages under ultrix,
+#put -DSHM_ONE in CFLAGS (along with -DSHM). This will make the OS work a
+#little harder (shm segments never stay attached), but is pretty fast.
+
+CFLAGS= -Wall -O -DAVOID_XVIEW -DMOTIF -DLOCAL -I/afs/psc.edu/projects/volumetrics/include -I/usr/local/X11R5/include -I/usr/local/include 
+
+# Sun's need to add /usr/lib/libdl.so.1.0 to LIBOPTIONS (at the end)
+
+# Dec's need to add -ldnet to LIBOPTIONS (at the end) if they compiled X for decnet use.
+
+LIBOPTIONS= -L/afs/psc.edu/projects/volumetrics/@sys/lib -L/usr/local/X11R5/lib -lim -lsdsc -lXm -lXt -lXmu -lXext -lX11 -lm
+
+CCSOURCE= mimview.cc rgbimage.cc imagehandler.cc ximagehandler.cc xmautoimagehandler.cc
+
+MIMVIEWOBJ= mimview.o rgbimage.o imagehandler.o ximagehandler.o xmautoimagehandler.o
+
+EXECUTABLES= mimview
+
+all: $(EXECUTABLES)
+
+mimview: $(MIMVIEWOBJ)
+	$(CC) -o $@ $(MIMVIEWOBJ) $(LIBOPTIONS)
+
+depend: $(CCSOURCE)
+	makedepend -DMAKING_DEPEND -- $(CFLAGS) -- $(CCSOURCE) $(CSOURCE)
+
+clean:
+	-rm *.o core
+
+clobber: clean
+	-rm $(EXECUTABLES) 
+
+.SUFFIXES: .cc
+
+.cc.o: ; $(CC) -c $(CFLAGS) -o $@ $*.cc
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+mimview.o: /usr/include/stdio.h /usr/local/X11R5/include/X11/keysym.h
+mimview.o: /usr/local/X11R5/include/X11/keysymdef.h
+mimview.o: /usr/local/X11R5/include/Xm/Xm.h
+mimview.o: /usr/local/X11R5/include/X11/Intrinsic.h
+mimview.o: /usr/local/X11R5/include/X11/Xlib.h /usr/include/sys/types.h
+mimview.o: /usr/include/sys/stdtypes.h /usr/include/sys/sysmacros.h
+mimview.o: /usr/local/X11R5/include/X11/X.h
+mimview.o: /usr/local/X11R5/include/X11/Xfuncproto.h
+mimview.o: /usr/local/X11R5/include/X11/Xosdefs.h /usr/include/stddef.h
+mimview.o: /usr/local/X11R5/include/X11/Xutil.h
+mimview.o: /usr/local/X11R5/include/X11/Xresource.h /usr/include/string.h
+mimview.o: /usr/local/X11R5/include/X11/Core.h
+mimview.o: /usr/local/X11R5/include/X11/Composite.h
+mimview.o: /usr/local/X11R5/include/X11/Constraint.h
+mimview.o: /usr/local/X11R5/include/X11/Object.h
+mimview.o: /usr/local/X11R5/include/X11/RectObj.h
+mimview.o: /usr/local/X11R5/include/X11/Vendor.h
+mimview.o: /usr/local/X11R5/include/Xm/VirtKeys.h
+mimview.o: /usr/local/X11R5/include/Xm/VendorE.h
+mimview.o: /usr/local/X11R5/include/Xm/ExtObject.h
+mimview.o: /usr/local/X11R5/include/X11/Shell.h
+mimview.o: /usr/local/X11R5/include/Xm/FileSB.h
+mimview.o: /usr/local/X11R5/include/Xm/CascadeBG.h
+mimview.o: /usr/local/X11R5/include/Xm/DialogS.h
+mimview.o: /usr/local/X11R5/include/Xm/Form.h
+mimview.o: /usr/local/X11R5/include/Xm/BulletinB.h
+mimview.o: /usr/local/X11R5/include/Xm/Frame.h
+mimview.o: /usr/local/X11R5/include/Xm/MainW.h
+mimview.o: /usr/local/X11R5/include/Xm/ScrolledW.h
+mimview.o: /usr/local/X11R5/include/Xm/MenuShell.h
+mimview.o: /usr/local/X11R5/include/Xm/MessageB.h
+mimview.o: /usr/local/X11R5/include/Xm/MwmUtil.h
+mimview.o: /usr/local/X11R5/include/X11/Xmd.h
+mimview.o: /usr/local/X11R5/include/Xm/PushB.h
+mimview.o: /usr/local/X11R5/include/Xm/Label.h
+mimview.o: /usr/local/X11R5/include/Xm/PushBG.h
+mimview.o: /usr/local/X11R5/include/Xm/LabelG.h
+mimview.o: /usr/local/X11R5/include/Xm/RowColumn.h
+mimview.o: /usr/local/X11R5/include/Xm/SeparatoG.h
+mimview.o: /usr/local/X11R5/include/Xm/Text.h
+mimview.o: /afs/psc.edu/projects/volumetrics/include/im.h
+mimview.o: /afs/psc.edu/projects/volumetrics/include/sdsc.h
+mimview.o: /afs/psc.edu/projects/volumetrics/include/sdscconfig.h
+mimview.o: /afs/psc.edu/projects/volumetrics/include/bin.h
+mimview.o: /afs/psc.edu/projects/volumetrics/include/arg.h
+mimview.o: /afs/psc.edu/projects/volumetrics/include/tag.h rgbimage.h
+mimview.o: imagehandler.h ximagehandler.h /usr/include/math.h
+mimview.o: /usr/include/floatingpoint.h /usr/include/sys/ieeefp.h
+rgbimage.o: /usr/include/stdio.h /usr/include/stdlib.h
+rgbimage.o: /usr/include/sys/stdtypes.h
+rgbimage.o: /afs/psc.edu/projects/volumetrics/include/im.h
+rgbimage.o: /afs/psc.edu/projects/volumetrics/include/sdsc.h
+rgbimage.o: /afs/psc.edu/projects/volumetrics/include/sdscconfig.h
+rgbimage.o: /afs/psc.edu/projects/volumetrics/include/bin.h
+rgbimage.o: /afs/psc.edu/projects/volumetrics/include/arg.h
+rgbimage.o: /afs/psc.edu/projects/volumetrics/include/tag.h rgbimage.h
+imagehandler.o: /usr/include/stdio.h /usr/include/stdlib.h
+imagehandler.o: /usr/include/sys/stdtypes.h
+imagehandler.o: /afs/psc.edu/projects/volumetrics/include/im.h
+imagehandler.o: /afs/psc.edu/projects/volumetrics/include/sdsc.h
+imagehandler.o: /afs/psc.edu/projects/volumetrics/include/sdscconfig.h
+imagehandler.o: /afs/psc.edu/projects/volumetrics/include/bin.h
+imagehandler.o: /afs/psc.edu/projects/volumetrics/include/arg.h
+imagehandler.o: /afs/psc.edu/projects/volumetrics/include/tag.h rgbimage.h
+imagehandler.o: imagehandler.h
+ximagehandler.o: /usr/include/stdio.h /usr/include/stdlib.h
+ximagehandler.o: /usr/include/sys/stdtypes.h /usr/include/time.h
+ximagehandler.o: /usr/local/X11R5/include/X11/Intrinsic.h
+ximagehandler.o: /usr/local/X11R5/include/X11/Xlib.h /usr/include/sys/types.h
+ximagehandler.o: /usr/include/sys/sysmacros.h
+ximagehandler.o: /usr/local/X11R5/include/X11/X.h
+ximagehandler.o: /usr/local/X11R5/include/X11/Xfuncproto.h
+ximagehandler.o: /usr/local/X11R5/include/X11/Xosdefs.h /usr/include/stddef.h
+ximagehandler.o: /usr/local/X11R5/include/X11/Xutil.h
+ximagehandler.o: /usr/local/X11R5/include/X11/Xresource.h
+ximagehandler.o: /usr/include/string.h /usr/local/X11R5/include/X11/Core.h
+ximagehandler.o: /usr/local/X11R5/include/X11/Composite.h
+ximagehandler.o: /usr/local/X11R5/include/X11/Constraint.h
+ximagehandler.o: /usr/local/X11R5/include/X11/Object.h
+ximagehandler.o: /usr/local/X11R5/include/X11/RectObj.h
+ximagehandler.o: /usr/local/X11R5/include/X11/Xatom.h
+ximagehandler.o: /usr/local/X11R5/include/X11/Xmu/StdCmap.h
+ximagehandler.o: /afs/psc.edu/projects/volumetrics/include/im.h
+ximagehandler.o: /afs/psc.edu/projects/volumetrics/include/sdsc.h
+ximagehandler.o: /afs/psc.edu/projects/volumetrics/include/sdscconfig.h
+ximagehandler.o: /afs/psc.edu/projects/volumetrics/include/bin.h
+ximagehandler.o: /afs/psc.edu/projects/volumetrics/include/arg.h
+ximagehandler.o: /afs/psc.edu/projects/volumetrics/include/tag.h rgbimage.h
+ximagehandler.o: imagehandler.h ximagehandler.h /usr/include/math.h
+ximagehandler.o: /usr/include/floatingpoint.h /usr/include/sys/ieeefp.h
+xmautoimagehandler.o: /usr/include/stdio.h
+xmautoimagehandler.o: /usr/local/X11R5/include/Xm/BulletinB.h
+xmautoimagehandler.o: /usr/local/X11R5/include/Xm/Xm.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Intrinsic.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Xlib.h
+xmautoimagehandler.o: /usr/include/sys/types.h /usr/include/sys/stdtypes.h
+xmautoimagehandler.o: /usr/include/sys/sysmacros.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/X.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Xfuncproto.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Xosdefs.h
+xmautoimagehandler.o: /usr/include/stddef.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Xutil.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Xresource.h
+xmautoimagehandler.o: /usr/include/string.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Core.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Composite.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Constraint.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Object.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/RectObj.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Vendor.h
+xmautoimagehandler.o: /usr/local/X11R5/include/Xm/VirtKeys.h
+xmautoimagehandler.o: /usr/local/X11R5/include/Xm/VendorE.h
+xmautoimagehandler.o: /usr/local/X11R5/include/Xm/ExtObject.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Shell.h
+xmautoimagehandler.o: /usr/local/X11R5/include/Xm/DrawingA.h
+xmautoimagehandler.o: /usr/local/X11R5/include/Xm/Form.h
+xmautoimagehandler.o: /usr/local/X11R5/include/Xm/MwmUtil.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/Xmd.h
+xmautoimagehandler.o: /usr/local/X11R5/include/X11/cursorfont.h rgbimage.h
+xmautoimagehandler.o: imagehandler.h ximagehandler.h /usr/include/math.h
+xmautoimagehandler.o: /usr/include/floatingpoint.h /usr/include/sys/ieeefp.h

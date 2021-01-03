@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Bytestohdf</title>
+  </head>
+
+  <body>
+      <h1>Bytestohdf</h1>
+
+      <h2>Name</h2>
+
+      <b>bytestohdf</b> - convert byte stream to 
+      <A HREF="http://hdf.ncsa.uiuc.edu/index.html">HDF</A> SDS format
+
+      <h2>Synopsis</h2>
+
+<pre>
+<code>
+bytestohdf [-l<var>label</var>] [-u<var>units</var>] [-f<var>format</var>] [-c<var>coordsys</var>] 
+	  [-s<var>hdrbytes</var>] [-o<var>ofile</var>] <var>nx</var> <var>ny</var> <var>nz</var> 
+</code>
+</pre>
+
+      <h2>Description</h2>
+
+      <p><b>bytestohdf</b> reads a stream of bytes from the standard input,
+      and saves the bytes as an 
+      <A HREF="http://hdf.ncsa.uiuc.edu/index.html">HDF</A> Scientific
+      Dataset representing a single 3D grid.  The X, Y, and Z dimensions 
+      of the grid are given by <var>nx</var>, <var>ny</var>, and 
+      <var>nz</var>.  
+
+      <p>The following options exist:
+
+      <dl compact>
+	<dt><b>-l<var>label</var></b>
+	<dd>Attach the given string to the data as a label.  For
+	  example, "density" might be a typical label string.
+	<dt><b>-u<var>units</var></b>
+	<dd>Attach the given string to specify the units of the data.  For
+	  example, "kg/m^3" might be a typical units string.
+	<dt><b>-f<var>format</var></b>
+	<dd>Attach the given string to specify the Fortran format to be used
+	  in printing the data.  For example, "i3" might be a typical
+	  format string.
+	<dt><b>-c<var>coordsys</var></b>
+	<dd>Attach the given string to specify the coordinate system in which
+	  the data is defined.  For example, "cartesian" might be a typical
+	  coordinate system string.
+	<dt><b>-s<var>hdrbytes</var></b>
+	<dd>Skip <var>hdrbytes</var> bytes at the beginning of the input
+	  data stream.  
+	<dt><b>-o<var>ofile</var></b>
+	<dd>Specify an ascii string giving the filename of the output
+	  file.  If not specified, the file produced is named 
+	  <em>bytes.hdf</em>.
+      </dl>
+
+      <p><strong>Note</strong> that in HDF Datasets, the Z index varies
+	fastest.  This means that successive planes of data (defined by
+	adjacent blocks in the input file) represent slices in planes of
+	constant X.  The X dimension is thus the number of slices present,
+	rather than the (perhaps more intuitive) Z dimension.  
+
+      <p><strong>Note</strong> that this program expects data in C
+	language array order, that is, with the last array dimension
+	varying fastest.  If the input datastream was written from a
+	Fortran language array, in which the first index varies fastest,
+	the translation process will change the coordinate system of the
+	data from right handed to left handed (or vice versa).
+
+
+      <h2>Examples</h2>
+      
+      <p>
+      <blockquote>
+	  <pre>bytestohdf -o<var>outfile</var> <var>xdim</var> <var>ydim</var> <var>zdim</var> &lt <var>infile</var></pre>
+      </blockquote>
+      will read <var>xdim</var>*<var>ydim</var>*<var>zdim</var> bytes from the
+      filename specified as <var>infile</var> and output an HDF file of the
+      given name <var>outfile</var> containing the data.
+
+      <p>A dataset consisting of 100 planes of data, each plane
+	being 200 by 300 voxels, would be arranged in the input file as a
+	series of 100 blocks of data, each block representing a plane.  Each
+	block in turn would consist of 200 rows of data, each 300 data
+	elements long.  The appropriate <b>bytestohdf</b> command to convert
+	such a dataset to HDF format would be:
+
+      <blockquote>
+	  <pre><code>bytestohdf -ooutfile.hdf 100 200 300 &lt infile.raw</code></pre>
+      </blockquote>
+
+
+      <hr>
+      <address><a href="mailto:welling@psc.edu">J. Welling</a></address>
+<!-- Created: Thu Jul 11 12:24:06 EDT 1996 -->
+<!-- hhmts start -->
+Last modified: Thu Jul 11 15:31:37 EDT 
+<!-- hhmts end -->
+  </body>
+</html>

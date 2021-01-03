@@ -1,0 +1,18 @@
+CXX= CC
+CC = cc
+CPP= $(CC) -E
+COMP_ID_FLAGS= -DCRAY_CC
+ENV_CFLAGS= -DCRAY_ARCH_C90 -DMPP_SUPPORT -O2
+ARCH_LIBOPTIONS= -lgen -lSM -lICE
+
+UILCC=uil
+
+RM = rm
+AR = ar rus
+RANLIB = ranlib
+MAKEDEPEND = /usr/bin/X11/makedepend
+
+XLIBOPTIONS= -lMrm -lXm -lXt -lXmu -lX11
+
+
+

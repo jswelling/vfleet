@@ -1,0 +1,108 @@
+<HTML>
+<HEAD>
+<title>VFleet Distributed Volume Renderer</title>
+<link rel="stylesheet" type="text/css" href="/wwwmaintenance/style/head+navbar.css" >
+</HEAD>
+<!--#include virtual="/wwwmaintenance/footer/navbar.html" -->
+<BODY>
+
+<IMG SRC="http://www.psc.edu/general/software/packages/vfleet/package_docs/development/bucky_iso.gif" ALT="cute picture here" ALIGN=LEFT HEIGHT=256 WIDTH=256 HSPACE=20>
+
+This image of the electron wave function of C60 was generated using VFleet,
+running on 8 processors of the PSC's Cray T3D.
+
+<BR CLEAR=LEFT>
+
+<H1>VFleet Distributed Volume Renderer</H1>
+
+VFleet is a volume renderer, which is a program that produces color images 
+from 3D volumes of data.  This program can run either locally or in a 
+distributed mode, meaning that it farms the work out over a network of
+workstations or a parallel computer.  The operation of the user interface 
+is pretty much identical in either case.  It is intended for use in 
+computational science, in that it can handle very large datasets 
+representing multiple variables within the same physical system.
+<p>
+The rendering modules of VFleet will run on any Unix platform.  The
+ user interface requires a Unix platform running Motif.  The distributed
+version requires that 
+<A HREF="http://www.epm.ornl.gov/pvm/pvm_home.html">PVM</A>
+is also installed.  
+<a href=/general/software/packages/pvm/pvm.html>Here</a> is the PSC's
+PVM documentation.
+<p>
+VFleet is intended to be installed and run at your site.
+<p>
+VFleet was developed at the Pittsburgh Supercomputing Center with major
+support from the <a href=http://zeus.ncsa.uiuc.edu:8080/GC3_Home_Page.html>
+Grand Challenge Cosmology Consortium</a>.<p>
+
+<p>
+This software is currently at release 1.1.  Improvements since the previous
+release include:
+<ul>
+<li>volume masking
+<li>optional trilinear interpolation
+<li>optional 3D mipmapping
+<li>better camera control
+<li>more complete scripting support
+</ul>
+<h2>VFleet Documentation</h2>
+<ul>
+<li><A HREF="http://www.psc.edu/general/software/packages/vfleet/package_docs/development/vfleet1.1.html">The VFleet User's Guide, version 1.1</a>
+<li><a href="http://www.psc.edu/general/software/packages/vfleet/package_docs/development/vfleet_pics_and_movies.html">Some examples of 
+graphics and animations</a> produced by VFleet.
+<li><A HREF="/general/software/packages/vfleet/package_docs/development/vfleet_bugs1.1.html">Known Bugs and Work-Arounds</A>
+<li><A HREF="/general/software/packages/vfleet/package_docs/development/vfleet_cray_mpp.html">Running VFleet on SGI/Cray MPPs</li>
+<li><A href="http://www.psc.edu/general/software/packages/vfleet/package_docs/development/vfleet_t3d_timings.html">Performance timings for the prerelease version of VFleet on the Cray T3D.</A>  These timings are out of date, but they show where the
+time is going.
+</ul><p>
+
+<h2>Download VFleet</h2>
+Binaries and source code for VFleet are available by anonymous ftp from
+<a href="ftp://ftp.psc.edu/pub/vfleet/">ftp.psc.edu</a>, in the
+subdirectory pub/vfleet.  
+<ul>
+<li><a href="ftp://ftp.psc.edu/pub/vfleet/README">README</a>
+<li><a href="ftp://ftp.psc.edu/pub/vfleet/README_SRC">README for the 
+source distribution</a>
+<li><a href="ftp://ftp.psc.edu/pub/vfleet/COPYRIGHT">Copyright Info</a>
+<li>Binaries for <a href="ftp://ftp.psc.edu/pub/vfleet/vfleet1.1_sgi.tar.gz">
+Silicon Graphics workstations</a> at IRIX 6.2 to 6.4
+<li>Binaries for <a href="ftp://ftp.psc.edu/pub/vfleet/vfleet1.1_sgi_6_5.tar.gz">
+Silicon Graphics workstations</a> at IRIX 6.5 or higher
+<li>Binaries for <a href="ftp://ftp.psc.edu/pub/vfleet/vfleet1.1_alpha.tar.gz">
+DEC Alpha workstations</a> at Digital Ultrix 3.2 or higher
+<li>Binaries for <a href="ftp://ftp.psc.edu/pub/vfleet/vfleet1.1_sun.tar.gz">
+Sun Sparc workstations</a> at SunOS 5.4 or higher
+<li>Binaries for <a href="ftp://ftp.psc.edu/pub/vfleet/vfleet1.1_hp.tar.gz">
+HP PA Risc workstations</a>
+<li>Binaries for <a href="ftp://ftp.psc.edu/pub/vfleet/vfleet1.1_linux.tar.gz">
+Intel Linux macines</a>.  These binaries were kindly provided by 
+<a href="mailto://zuliap@fislab.dsi.unimi.it">Paolo Zuliani</a>.  They are
+actually for the (almost identical) 1.1b4p2 release.  These binaries
+were compiled with stub PVM routines, and so can run only locally.
+<li><a href="ftp://ftp.psc.edu/pub/vfleet/vfleet1.1_src.tar.gz">Source Code</a>
+for VFleet.  If you would like to discuss the source code, please send
+mail me mail at <a href="mailto:welling@psc.edu">welling@psc.edu</a>; it's
+one of my favorite topics.
+</ul>
+
+<H2>Obsolete Documentation</H2>
+<p>These documents may still be useful if you are running an old version
+of VFleet.
+<ul>
+<li><A HREF="http://www.psc.edu/general/software/packages/vfleet/package_docs/development/vfleet.html">The VFleet User's Guide, version 1.0</a>
+<li><a href=/general/software/packages/vfleet/package_docs/development/vfleet_bugs.html>Known bugs in version 1.0</a>
+</ul>
+
+<h2>See Also:</h2>
+<ul>
+<li>Other <a href=http://www.psc.edu/general/software/categories/graphics.html>graphics and 
+vizualization software</A> at the PSC.
+
+</ul><p>
+
+<!--#include virtual="/wwwmaintenance/footer/software_footer.html"  -->
+</BODY>
+</HTML>

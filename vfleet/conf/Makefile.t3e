@@ -1,0 +1,16 @@
+CXX= CC
+CC = cc
+CPP= cpp
+COMP_ID_FLAGS= -DCRAYCC
+ENV_CFLAGS= -DCRAY_ARCH_T3E -O2
+ARCH_LIBOPTIONS= -lgen
+
+UILCC=uil
+
+RM = rm
+AR = ar rus
+RANLIB = ranlib
+MAKEDEPEND = makedepend
+
+XLIBOPTIONS= -lMrm -lXm -lXt -lXmu -lX11 -lSM -lICE
+

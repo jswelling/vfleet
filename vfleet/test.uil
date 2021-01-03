@@ -1,0 +1,126 @@
+module test
+    version = 'v1.0'
+    names = case_sensitive
+    character_set=iso_latin1
+    objects = { XmPushButton = gadget; XmToggleButton = gadget; }
+
+include file 'crystal.uil';
+
+value
+	k_help_id : 1;
+	k_crystal_id : 2;
+
+procedure
+	create_cb(integer);
+	help_cb(compound_string);
+	exit_cb();
+	arm_cb();
+	drag_cb();
+	disarm_cb();
+	value_changed_cb();
+	redraw_cb();
+	resize_cb();
+
+value help_text :
+        compound_string(" ", separate=true) &
+        compound_string(" ", separate=true) &
+        compound_string("This is a test.", separate=true) &
+        compound_string("This is only a test.", separate=true) &
+        compound_string(" ", separate=true) &
+        compound_string("If this were more than just a test,", separate=true) &
+        compound_string("this might contain something useful.",separate=true) &
+        compound_string("");
+
+
+object app_main : XmMainWindow {
+    controls {
+	XmMenuBar bar;
+	XmForm work;
+        unmanaged XmInformationDialog help_box;
+    };
+    callbacks {
+	XmNhelpCallback=procedure help_cb(compound_string("Test") & help_text);
+    };
+};
+
+object help_box : XmInformationDialog {
+    arguments {
+        XmNmessageAlignment = XmALIGNMENT_CENTER;
+        XmNdialogTitle = "Help";
+        XmNokLabelString = "Dismiss";
+    };
+    callbacks {
+        MrmNcreateCallback = procedure create_cb(k_help_id);
+    };
+};
+
+object bar : XmMenuBar {
+    arguments {
+	XmNmenuHelpWidget = XmCascadeButton help;
+    };
+    controls {
+	XmCascadeButton file;
+	XmCascadeButton help;
+    };
+};
+
+object file : XmCascadeButton {
+    arguments { XmNlabelString = "File"; XmNmnemonic = keysym('F'); };
+    controls { XmPulldownMenu file_pd; };
+};
+object file_pd : XmPulldownMenu {
+    controls {
+	XmPushButton exit_pb;
+    };
+};
+object exit_pb : XmPushButton {
+    arguments { XmNlabelString = "Exit"; XmNmnemonic = keysym('E');};
+    callbacks { XmNactivateCallback = procedure exit_cb(); };
+};
+
+object help : XmCascadeButton {
+    arguments { XmNlabelString = "Help"; XmNmnemonic = keysym('H'); };
+    controls { XmPulldownMenu help_pd; };
+};
+object help_pd : XmPulldownMenu {
+    controls {
+	XmPushButton help_pb;
+    };
+};
+object help_pb : XmPushButton {
+    arguments { XmNlabelString = "On Test"; XmNmnemonic = keysym('T');};
+    callbacks { XmNactivateCallback = procedure help_cb
+		(compound_string("Test") & help_text); };
+};
+
+object work : XmForm {
+    controls {
+	user_defined crystal;
+    };
+};
+
+object crystal : user_defined procedure CrystalCreate {
+    arguments {
+	XmNrightAttachment = XmATTACH_FORM; XmNrightOffset = 5;
+	XmNleftAttachment = XmATTACH_FORM; XmNleftOffset = 5;
+	XmNtopAttachment = XmATTACH_FORM; XmNtopOffset = 5;
+	XmNbottomAttachment = XmATTACH_FORM; XmNbottomOffset = 10;
+	XmNwidth = 300;
+	XmNheight = 300;
+	XmNresizePolicy = XmRESIZE_ANY;
+    };
+    callbacks {
+    	XmNarmCallback = procedure arm_cb();
+    	XmNdisarmCallback = procedure disarm_cb();
+    	XmNdragCallback = procedure drag_cb();
+    	XmNvalueChangedCallback = procedure value_changed_cb();
+	MrmNcreateCallback = procedure create_cb(k_crystal_id);
+	XmNhelpCallback = procedure help_cb
+	                (compound_string("crystal") & help_text);
+    	XmNexposeCallback = procedure redraw_cb();
+    	XmNresizeCallback = procedure resize_cb();
+    };
+};
+
+end module;
+

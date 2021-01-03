@@ -1,0 +1,17 @@
+CXX= CC
+CC= cc
+CPP= $(CC) -E
+COMP_ID_FLAGS= -DSUN_CC
+ENV_CFLAGS= -DSYSV_TIMING -DSYSV_RAND -DSUN_SPARC -I/usr/openwin/include -I/usr/dt/include -O2
+ARCH_LIBOPTIONS= -lsocket -lnsl -ldl -lgen
+
+UILCC= /usr/dt/bin/uil
+
+RM = rm
+AR = ar rus
+RANLIB = ranlib
+MAKEDEPEND = /usr/openwin/bin/makedepend
+
+XLIBOPTIONS= -L/usr/openwin/lib -L/usr/dt/lib -lMrm -lXm -lXt -lXmu -lX11
+
+

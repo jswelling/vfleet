@@ -1,0 +1,13 @@
+#!/usr/bin/csh -f
+#
+# This file sets up the proper environment for running vfleet.
+#
+if ( $?UIDPATH ) then
+	setenv UIDPATH ${UIDPATH}:/afs/psc.edu/projects/volumetrics/bin/%U
+else 
+	setenv UIDPATH /afs/psc.edu/projects/volumetrics/bin/%U
+endif
+if ( ! $?VFLEET_ROOT ) then
+	setenv VFLEET_ROOT /afs/psc.edu/projects/volumetrics/vfleet_root
+endif
+cd /afs/psc.edu/projects/volumetrics/samples ; /afs/psc.edu/projects/volumetrics/bin/vfleet

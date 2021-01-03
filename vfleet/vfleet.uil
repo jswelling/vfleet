@@ -1,0 +1,550 @@
+module vfleet
+    version = 'v1.1'
+    names = case_sensitive
+    character_set=iso_latin1
+    objects = {
+	XmPushButton = gadget;
+	XmToggleButton = gadget;
+	XmSeparator = gadget;
+    }
+
+value
+        k_file_menu_pb_id : 1;
+        k_open_id : 2;
+        k_canvas_id : 3;
+        k_quality_settings_id : 4;
+	k_debugger_controls_id : 5;
+	k_logger_id : 6;
+	k_dataset_list_id : 7;
+	k_photo_id : 8;
+        k_tfun_open_id : 9;
+        k_steering_box_id : 10;
+	k_free_datavol_id : 11;
+	k_image_save_id : 12;
+	k_open_remote_id : 13;
+	k_tcl_script_id : 14;
+	k_data_xsize_text_id : 15;
+	k_data_ysize_text_id : 16;
+	k_data_zsize_text_id : 17;
+	k_renderer_controls_id : 18;
+	k_opac_length_id : 19;
+	k_use_lighting_id : 20;
+	k_fast_lighting_id : 21;
+	k_fast_distances_id : 22;
+	k_opac_limit_id : 23;
+	k_color_comp_error_id : 24;
+	k_opac_min_id : 25;
+	k_open_remote_pb_id : 26;
+	k_table_tfun_id : 27;
+	k_tfun_save_id : 28;
+	k_table_tfun_image_id : 29;
+	k_table_tfun_edit_id : 30;
+	k_trilinear_interp_id : 31;
+	k_specular_lighting_id : 32;
+	k_threed_mipmap_id : 33;
+        k_camera_controls_id : 34;
+	k_remote_load_dir_id : 35;
+	k_remote_load_file_id: 36;
+	k_rmt_dta_xsize_text_id: 37;
+	k_rmt_dta_ysize_text_id: 38;
+	k_rmt_dta_zsize_text_id: 39;
+
+	control_background : color('#607080');
+	control_foreground : color('LightGoldenrod');
+	logger_background : color('#102030');
+	logger_foreground : color('LightGoldenrod');
+
+	hdf : 1;
+	pghmri : 2;
+
+include file "vfleet_error.uil";
+include file "vfleet_help.uil";
+include file "vfleet_generics.uil";
+include file "vfleet_qual_dlog.uil";
+include file "vfleet_ren_dlog.uil";
+include file "vfleet_file_menu.uil";
+include file "vfleet_tfun_dlog.uil";
+include file "vfleet_slices.uil";
+include file "vfleet_debug_menu.uil";
+include file "vfleet_goodies.uil";
+include file "vfleet_photo.uil";
+include file "vfleet_camera.uil";
+
+procedure
+        create_cb(integer);
+ 	canvas_resize_cb();
+ 	canvas_expose_cb();
+        steering_box_expose_cb();
+	do_render_cb();
+	abort_render_cb();
+	canvas_input_cb();
+	CreateCanvas();
+
+value adopt_datafile_phys_sz_msg : exported
+      compound_string("This dataset knows something about its physical" &
+      " size.  The available values are being adopted." );
+
+value help_text :
+        "VFleet version 1.1_beta_4\n" &
+        "\n" &
+        "By Joel Welling, with Rob Earhart and others\n" &
+        "\n" &
+        "Copyright 1993, 1994, 1995, 1996 Carnegie Mellon University. " &
+	"Permission use, copy, and modify this software and its " &
+	"documentation without fee for personal use or use within your " &
+	"organization is hereby granted, provided that the above copyright " &
+	"notice is preserved in all copies and that that copyright and " &
+	"this permission notice appear in supporting documentation.  " &
+	"Permission to redistribute this software to other organizations " &
+	"or individuals is not granted;  that must be negotiated with the " &
+	"PSC.  Neither the PSC nor Carnegie Mellon University make any " &
+	"representations about the suitability of this software for any " &
+	"purpose.  It is provided \"as is\" without express or implied " &
+	"warranty.";
+
+value help_more_info_text :
+	"For more information, use a World Wide Web browser " &
+	"like Mosaic or Lynx to access the WWW document " &
+	"http://www.psc.edu/Packages/VFleet_Home";
+
+value help_mn_wnd_text :
+	"The main window consists of several areas.  The one " &
+	"with which you will most often interact directly is the trackball " &
+	"window, which looks like a sphere in a box.  To change the " &
+	"direction from which the volume of data is rendered, depress " &
+	"the left mouse button while the cursor is in the trackball " &
+	"area, drag, and release the button.  The sphere and box will " &
+	"rotate as if they were embedded in a crystal ball, and you had " &
+	"just rotated the ball by rolling it with the cursor.  When " &
+	"the next view of the data is rendered, the volume will be " &
+	"rendered from precisely the viewing direction from which the " &
+	"ball and box are seen.\n" &
+	"\n" &
+	"Three of the edges of the box shown in the trackball window are " &
+	"red, green, and blue.  These edges correspond to the X, Y, and Z " &
+	"axes of the data respectively.  By comparing the picture in this " &
+	"window with your data, you can always tell how your data is " &
+	"oriented in space.  The pattern of lighting on the sphere " &
+	"will give you a rough idea of the lighting direction.  " &
+	"\n" &
+	"The main window also contains the area in which the rendered " &
+	"image of data will appear.  To change the size " &
+	"of the rendered view, simply stretch the window in which it " &
+	"appears and re-render.  (The \"Image\" menu provides options " &
+	"which will set the image to specific sizes). " &
+	"The middle mouse button can be used in this window to " &
+	"change the camera position;  this " &
+	"is done in connection with the camera control dialog.\n" &
+	"\n" &
+	"The main window also contains a list of currently open datasets.";
+
+value help_file_menu_text :
+	"The File menu allows you to load and store data, transfer " &
+	"functions, and images.\n" &
+	"\n" &
+	"The first menu items allow you to load data volumes, and free " &
+	"data volumes that have been loaded.  Currently data to be loaded " &
+	"must be in HDF Scientific Dataset format, and must represent a " &
+	"three dimensional grid.  The data type (that is, byte, float, or " &
+	"whatever) is not important;  VFleet " &
+	"will convert any HDF data type appropriately.  You must load a " &
+	"data volume before you do anything else in VFleet.  All data " &
+	"volumes loaded in a single VFleet session must have the same " &
+	"resolution and physical dimensions.\n" &
+	"\n" &
+	"The option to open a remote data file can be used to open a file " &
+	"residing on the (top-level) rendering host, rather than on the " &
+	"local host.  This button is available only in distributed " &
+	"rendering mode. \n" &
+	"\n" &
+	"The option to " &
+	"free a data volume is provided to allow you to free up memory. " &
+	"Freeing a data volume has no effect on the data file on disk. \n" &
+	"\n" &
+	"Menu options are also provided to allow you to open, create, " &
+	"edit, and save transfer functions.  When you open or create a " &
+	"transfer function, a transfer function editor will appear, " &
+	"allowing you to view and change the transfer function contents.\n" &
+	"\n" &
+	"You can also save the currently rendered image to a file.  A " &
+	"number of different file formats, including RLE, Postscript, " &
+	"TIFF, GIF, Mac PICT, and SGI RGB formats, are provided.\n" &
+	"\n" &
+	"Obviously enough, the Quit option quits the application." ;
+
+value help_rndr_menu_text : 
+	"The Render menu offers options associated with rendering.  The Go " &
+	"option causes rendering to occur, if one or more datavolumes and " &
+	"a transfer function have been loaded.  (The options to do so " &
+	"are available via the File menu).\n" &
+	"\n" &
+	"The Abort Render button causes a render in progress to be aborted, " &
+	"but only when VFleet is running in distributed mode.  When VFleet " &
+	"is running in local mode, you won't even be able to pop up the " &
+	"menu until the render is complete.\n" &
+	"\n" &
+	"The Camera Controls button opens a dialog box which can be used to " &
+	"modify the camera.  For example, this tool can be used to change " &
+	"the point of view used for rendering.\n" &
+	"\n" &
+	"Options are also provided to control the accuracy with which an " &
+	"image is rendered, and to allow control of several rendering " &
+	"parameters." ;
+
+value help_slice_menu_text :
+	"The items in this menu " &
+	"allow images of single slices of the current " &
+	"sample volume to be generated.  These can be useful in designing " &
+	"an appropriate transfer function.  Note that in distributed " &
+	"rendering " &
+	"mode, since the data files are not cached in local memory, VFleet " &
+	"must re-scan the data files to update the images when the transfer " &
+	"function changes.  Because of the order in which data is stored on " &
+	"disk, this takes much longer for some slicing directions than " &
+	"others.  In particular, for HDF data files X slices are drawn " &
+	"much more quickly than Y or Z slices;  Z slices can be quite " &
+	"slow.";
+
+value help_image_menu_text :
+	"The Tear Off Image option allows the most recently rendered image " &
+	"to be copied to a new window.  This allows multiple differently " &
+	"rendered images to be held on-screen for comparison.  Note that " &
+	"only the most recently rendered image can be saved to a file;  you " &
+	"cannot save a torn off image to a file.\n" &
+	"\n" &
+	"Several menu items are provided which allow you to set the " &
+	"resolution " &
+	"of the rendered image.  This can also be accomplished by dragging " &
+	"the corner of the window, but it is easier to set precise sizes " &
+	"using the menu selection.  The next image rendered will be of " &
+	"the selected size.";
+
+value no_dataset_loaded_msg : exported
+	compound_string("Error: You have to load a file first.",
+			separate=true ) &
+	compound_string("(Use the Open Data File button in the File menu.)");
+
+value no_tfun_loaded_msg : exported
+    compound_string("Error: You have to load a transfer function file first.",
+		    separate= true) &
+    compound_string("(Use the Open Transfer Table button in the File menu.)");
+
+value incommensurate_datavols_msg : exported
+    compound_string("Error: The new datavolume specified does not match an",
+		    separate=true) &
+    compound_string("earlier datavolume in physical size or grid dimension.");
+
+value really_exit_msg : exported
+    compound_string("Really, really exit?");
+
+object app_main : XmMainWindow {
+    controls {
+        XmMenuBar bar;
+        XmForm work;
+        unmanaged XmFileSelectionDialog file_box;
+	unmanaged XmFormDialog open_remote_dfile_dlog;
+        unmanaged XmFileSelectionDialog tfun_file_box;
+	unmanaged XmFileSelectionDialog image_save_file_box;
+	unmanaged XmFileSelectionDialog tfun_save_file_box;
+	unmanaged XmFileSelectionDialog load_tcl_file_box;
+	unmanaged XmFormDialog quality_settings;
+	unmanaged XmFormDialog renderer_controls;
+	unmanaged XmSelectionDialog free_datavol_selection_dlog;
+    };
+    callbacks {
+        XmNhelpCallback=procedure help_cb(help_text);
+    };
+};
+
+object bar : XmMenuBar {
+    arguments {
+        XmNmenuHelpWidget = XmCascadeButton help;
+    };
+    controls {
+        XmCascadeButton file;
+        XmCascadeButton render;
+	XmCascadeButton slice_menu;
+	XmCascadeButton image_menu;
+	unmanaged XmCascadeButton debug;
+        XmCascadeButton help;
+    };
+};
+
+object file : XmCascadeButton {
+    arguments { XmNlabelString = "File"; XmNmnemonic = keysym('F'); 
+	      XmNsensitive = false; };
+    controls { XmPulldownMenu file_pd; };
+    callbacks {
+        MrmNcreateCallback = procedure create_cb(k_file_menu_pb_id);
+    };
+};
+
+object render : XmCascadeButton {
+    arguments { XmNlabelString = "Render"; XmNmnemonic = keysym('R'); };
+    controls { XmPulldownMenu render_pd; };
+};
+
+object render_pd : XmPulldownMenu {
+    controls {
+	XmPushButton do_render_pb;
+	XmPushButton abort_render_pb;
+	XmSeparator menu_sep;
+	XmPushButton show_camera_controls_pb;
+	XmPushButton show_renderer_controls_pb;
+	XmPushButton show_quality_settings_pb;
+    };
+};
+
+object do_render_pb : XmPushButton {
+    arguments { XmNlabelString = "Go!"; XmNmnemonic = keysym('G');};
+    callbacks { XmNactivateCallback = procedure do_render_cb(); };
+};
+
+object abort_render_pb : XmPushButton {
+    arguments { XmNlabelString = "Abort Render"; XmNmnemonic = keysym('A');};
+    callbacks { XmNactivateCallback = procedure abort_render_cb(); };
+};
+
+object show_camera_controls_pb : XmPushButton {
+  arguments { 
+    XmNlabelString = "Camera Controls...";
+    XmNmnemonic = keysym('C');
+  };
+  callbacks {
+    XmNactivateCallback = procedure open_cb( k_camera_controls_id );
+  };
+};
+
+object show_quality_settings_pb : XmPushButton {
+    arguments { XmNlabelString = "Quality Settings..."; XmNmnemonic = keysym('Q');};
+    callbacks { XmNactivateCallback = procedure open_cb(k_quality_settings_id); };
+};
+
+object show_renderer_controls_pb : XmPushButton {
+    arguments { XmNlabelString = "Renderer Settings..."; XmNmnemonic = keysym('R');};
+    callbacks { XmNactivateCallback = procedure open_cb(k_renderer_controls_id); };
+};
+
+object slice_menu : XmCascadeButton {
+    arguments { XmNlabelString ="Slices"; XmNmnemonic = keysym('S'); };
+    controls { XmPulldownMenu slices_pd; };
+};
+
+object image_menu : XmCascadeButton {
+    arguments { XmNlabelString ="Image"; XmNmnemonic = keysym('I'); };
+    controls { XmPulldownMenu image_pd; };
+};
+
+object debug : XmCascadeButton {
+    arguments { XmNlabelString = "Debug"; XmNmnemonic = keysym('D'); };
+    controls { XmPulldownMenu debug_pd; };
+    callbacks {
+        MrmNcreateCallback = procedure create_cb(k_debugger_controls_id);
+    };
+};
+
+object help : XmCascadeButton {
+    arguments { XmNlabelString = "Help"; XmNmnemonic = keysym('H'); };
+    controls { XmPulldownMenu help_pd; };
+};
+
+object help_pd : XmPulldownMenu {
+    controls {
+        XmPushButton help_vfleet_pb;
+	XmPushButton help_mn_wnd_pb;
+	XmPushButton help_file_menu_pb;
+	XmPushButton help_rndr_menu_pb;
+	XmPushButton help_slice_menu_pb;
+	XmPushButton help_image_menu_pb;
+	XmPushButton help_more_info_pb;
+    };
+};
+
+object help_vfleet_pb : XmPushButton {
+    arguments { XmNlabelString = "On Vfleet"; };
+    callbacks { XmNactivateCallback = procedure help_cb(help_text); };
+};
+
+object help_mn_wnd_pb : XmPushButton {
+    arguments { XmNlabelString = "Main Window"; };
+    callbacks { XmNactivateCallback = procedure help_cb(help_mn_wnd_text);};
+};
+
+object help_file_menu_pb : XmPushButton {
+    arguments { XmNlabelString = "File Menu"; };
+    callbacks { XmNactivateCallback = procedure help_cb(help_file_menu_text);};
+};
+
+object help_rndr_menu_pb : XmPushButton {
+    arguments { XmNlabelString = "Render Menu"; };
+    callbacks { XmNactivateCallback = procedure help_cb(help_rndr_menu_text);};
+};
+
+object help_slice_menu_pb : XmPushButton {
+    arguments { XmNlabelString = "Slices Menu"; };
+    callbacks { XmNactivateCallback = procedure help_cb(help_slice_menu_text);};
+};
+
+object help_image_menu_pb : XmPushButton {
+    arguments { XmNlabelString = "Image Menu"; };
+    callbacks { XmNactivateCallback = procedure help_cb(help_image_menu_text);};
+};
+
+object help_more_info_pb : XmPushButton {
+    arguments { XmNlabelString = "For More Info"; };
+    callbacks { XmNactivateCallback = procedure help_cb(help_more_info_text);};
+};
+
+object work : XmForm {
+    controls {
+	XmLabel logger;
+	XmSeparator work_sep;
+	XmFrame control_frame;
+	XmSeparator control_sep;
+!	XmDrawingArea canvas;
+	user_defined canvas;
+    };
+};
+
+object control_frame : XmFrame {
+    arguments {
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = work_sep;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNshadowThickness = 3;
+	XmNshadowType = XmSHADOW_OUT;
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+    };
+    controls {
+	XmForm control_form;
+    };
+};
+
+object control_form : XmForm {
+    arguments {
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+    };
+    controls {
+        XmForm info_form;
+	XmFrame steering_box_frame;
+    };
+};
+
+object info_form : XmForm {
+    arguments {
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = steering_box_frame;
+	XmNleftOffset = 5;
+	XmNtopOffset = 5;
+	XmNrightOffset = 5;
+	XmNbottomOffset = 5;
+    };
+    controls {
+	XmScrolledList dataset_list;
+    };
+};
+
+object dataset_list : XmScrolledList {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNbottomAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure create_cb( k_dataset_list_id );
+  };
+};
+
+object steering_box_frame : XmFrame {
+    arguments {
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNshadowThickness = 3;
+	XmNshadowType = XmSHADOW_IN;
+    };
+    controls {
+	XmDrawingArea steering_box;
+    };
+};
+
+object steering_box : XmDrawingArea {
+    arguments {
+	XmNwidth = 190;
+	XmNheight = 190;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure create_cb(k_steering_box_id);
+	XmNexposeCallback = procedure steering_box_expose_cb();
+    };
+  };
+
+object control_sep : XmSeparator {
+    arguments {
+	XmNleftAttachment = XmATTACH_WIDGET;
+	XmNleftWidget = control_frame;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = work_sep;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNorientation = XmVERTICAL;
+    };
+};
+
+object work_sep : XmSeparator {
+    arguments {
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = logger;
+	XmNorientation = XmHORIZONTAL;
+    };
+};
+
+object logger : XmLabel {
+    arguments {
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_FORM;
+	XmNresizable = false;
+	XmNbackground = logger_background;
+	XmNforeground = logger_foreground;
+    };
+    callbacks {
+	MrmNcreateCallback = procedure create_cb(k_logger_id);
+    };
+};
+
+!object canvas : XmDrawingArea {
+object canvas : user_defined procedure CreateCanvas {
+    arguments {
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNleftAttachment = XmATTACH_WIDGET;
+	XmNleftWidget = control_sep;
+	XmNtopAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = work_sep;
+	XmNwidth = 300;
+	XmNheight = 300;
+	XmNresizePolicy = XmRESIZE_ANY;
+    };
+    callbacks {
+	MrmNcreateCallback = procedure create_cb(k_canvas_id);
+	XmNexposeCallback = procedure canvas_expose_cb();
+	XmNinputCallback = procedure canvas_input_cb();
+	XmNresizeCallback = procedure canvas_resize_cb();
+    };
+};
+
+end module;
+

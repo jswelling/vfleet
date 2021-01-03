@@ -1,0 +1,1394 @@
+<title>VFleet User's Guide</title>
+<H1>VFleet User's Guide</H1>
+
+<P>This document describes the function and use of the VFleet
+distributed volume renderer.  This renderer was developed at the <A
+HREF="http://www.psc.edu/">Pittsburgh Supercomputing Center</A>
+with major support from the 
+<A HREF="http://zeus.ncsa.uiuc.edu:8080/GC3_Home_Page.html"> 
+Grand Challenge Cosmology
+Consortium (GC3)</A>.
+
+<H2>Table of Contents</H2>
+
+<OL>
+<LI><A HREF="#Intro">Introduction</A>
+<LI><A HREF="#VolRender"> Volume Rendering </A>
+<LI><A HREF="#HWare">Hardware Requirements</A>
+<LI><A HREF="#Strengths">Strengths of VFleet</A>
+	<UL>
+	<LI><A HREF="#AnyUnix">Any Unix Platform</A>
+	<LI><A HREF="#DistributedOp">Distributed Operation</A>
+	<LI><A HREF="#MultiData">Multiple Data Volumes</A>
+	<LI><A HREF="#FlexTFun">Flexible Transfer Function</A>
+	</UL>
+<LI><A HREF="#Limitations"> Limitations of VFleet </A>
+	<UL>
+	<LI><A HREF="#RegularGrid"> Regular Gridded Data </A>
+	<LI><A HREF="#Commensurate"> Commensurate Data </A>
+	<LI><A HREF="#SlowSpeed"> Speed vs. Functionality Tradeoffs </A>
+	</UL>
+<LI><A HREF="#OtherVRen">Other Volume Renderers</A>
+<LI><A HREF="#QuickStart">Quick Start Instructions</A>
+<LI><A HREF="#Principles">Principles of Operation</A>
+	<UL>
+	<LI><A HREF="#DataandSampleVols">
+	Data Volumes and the Sample Volume
+	</A>
+	<LI><A HREF="#TFuns">Transfer Functions</A>
+	<LI><A HREF="#Rendering">Rendering</A>
+	<LI><A HREF="#AccelTech">Acceleration Techniques</A>
+	</UL>
+<LI><A HREF="#DistribExec">Distributed Execution</A>
+<LI><A HREF="#OperInst">Operating Instructions</A>
+	<UL>
+	<LI><A HREF="#DistribOp">Starting Up in Distributed Mode</A>
+	<LI><A HREF="#LocalOp">Startup in Local Mode</A>
+	<LI><A HREF="#MainWindowOp">Main Window</A>
+	<LI><A HREF="#LoadDataOp">Loading Input Data</A>
+	<LI><A HREF="#LoadTfunOp">Loading or Creating Transfer Functions</A>
+	<LI><A HREF="#RenderOp">Rendering Menu Operations</A>
+	      <UL>
+		<LI><A HREF="#GeneralRen">Rendering and Aborting Renders</A>
+		<LI><A HREF="#CamCtrl">Camera Controls</A>
+		<LI><A HREF="#RenCtrl">Renderer Controls</A>
+		<LI><A HREF="#QualCtrl">Quality Controls</A>
+	      </UL>
+	<LI><A HREF="#ViewSliceOp">Viewing Slices</A>
+	<LI><A HREF="#ImageOp">Image Menu</A>
+	<LI><A HREF="#QuitOp">Quitting</A>
+	<LI><A HREF="#ScriptsOp">Scripts and Animation</A>
+	</UL>
+<LI><A HREF="#InputOutputF">Input and Output Files</A>
+	<UL>
+	<LI><A HREF="#DataF">Data Files</A>
+	<LI><A HREF="#TfunF">Transfer Function File</A>
+	<LI><A HREF="#ImageF">Images</A>
+	<LI><A HREF="#ScriptF">Scripts</A>
+	</UL>
+<LI><A HREF="#RSN">Real Soon Now</A>
+	<UL>
+	<LI><A HREF="#MoreTFuns">More Transfer Functions</A>
+        <LI><A HREF="#GeometricalPrims">Geometrical Primitives</A>
+	<LI><A HREF="#MoreScriptFunc">More UI and Script Functionality</A>
+	<LI><A HREF="#AltRenderers">Alternate Renderers</A>
+	<LI><A HREF="#AltDists">Alternate Parallel Distributions</A>
+	</UL>
+</OL>
+
+<H2><A NAME="Intro">Introduction</A></H2>
+
+<P>VFleet is a volume renderer, which is a program that produces color
+images from 3D volumes of data.  This program can run either locally
+or in a distributed mode, meaning that it can farm the work out over a
+network of workstations or a parallel computer.  The operation of the
+user interface is pretty much identical in either case.  It is
+intended for use in computational science, in that it can handle very
+large datasets representing multiple variables within the same
+physical system.
+
+<H2><A NAME="HWare">Hardware Requirements</A></H2>
+
+<P>The rendering modules of VFleet will run on any Unix platform.  The
+user interface requires a Unix platform running Motif.
+
+<P>VFleet uses one byte of storage per data voxel per dataset, plus
+a little more than 9 bytes per voxel (8 for each level of the acceleration
+octree) for the volume of color samples calculated from the data.
+
+<H2><A NAME="VolRender">Volume Rendering</A></H2>
+
+<P>Volume rendering is a way of generating images from a volume of data
+which is considered to fill some space.  Technically, the idea is that
+some set of continuous functions is defined on the space.  The data
+that is actually rendered is considered to represent samples of those
+functions taken at discrete points.  
+
+<P>The process of rendering the data takes place in two steps.  In the 
+first step, a volume of color and opacity values is calculated from the
+data volumes.  In the second step, an image of the volume of color and
+opacity is generated.  The effect is to show the original data as if 
+it was patterns of color in a block of glass.
+
+<P>Some volume renderers mix these two steps, so that they happen together
+and are not computationally distinct.  VFleet does the two steps separately.
+The first is called <em>(re)calculating the sample volume</em> while
+the second is called simply <em>rendering</em>.
+
+<P>Another common method for generating images from 3D volumes of data
+is by extracting constant value surfaces from the data and then
+building representations of those surfaces using polygons.  The
+well-known <dfn>Marching Cubes Algorithm</dfn> does this.  This
+technique can work well, particularly if the amount of data involved
+is small (perhaps 64 cubed data elements or fewer) and if the
+interesting features of the data lie on sharp boundaries.  Volume
+rendering is superior to isosurface rendering for larger datasets, and
+for datasets where the boundaries are less sharp.
+
+<p>
+An introductory "class" in volume rendering is available
+<a href="Vol.Vis.0.html">here</a>,
+and an overview of volume visualization is available 
+<A HREF="http://www.dataspace.com/WWW/documents/tech-summary.html">here</A>.
+
+<H2><A NAME="Strengths">Strengths of VFleet</A></H2>
+
+VFleet has the following strengths when compared to the "average" free
+volume renderer.
+
+<H3><A NAME="AnyUnix">Any Unix Platform</A></H3>
+
+<P>VFleet runs on any Unix platform for which Motif is available.
+The distributed version of VFleet uses the 
+<A HREF="http://www.epm.ornl.gov/pvm/pvm_home.html">PVM</A>
+parallel programming
+package, which is free, portable, and widely used.
+
+<H3><A NAME="DistributedOp">Distributed Operation</A></H3>
+
+<P>VFleet can be run either locally or distributed over a network of 
+workstations or a parallel computer.  Since volume rendering is a
+nearly "embarrassingly parallel" task, this can produce quite large
+speed-ups in rendering time.  (On a local area network, communication
+delays for the shipping of images can tend to offset this, however).
+
+<P>The other big advantage of parallel execution is available memory
+size.  Available memory is generally the limiting factor in how large
+a volume of data can be rendered;  by dividing the volume up over
+multiple platforms this problem can be reduced.  At the moment,
+however, each worker process receives an equal-sized chunk of the
+input data volume.  This means that it is best to put multiple processes
+on machines with relatively large amounts of memory, which can unbalance
+the rendering time of the worker processes.
+
+<H3><A NAME="MultiData">Multiple Data Volumes</A></H3>
+
+<P>VFleet allows multiple data volumes to be loaded and rendered
+simultaneously.  For example, if fields of pressure and temperature
+are available for the same physical system, VFleet can produce an
+image which includes both.  If registered datasets from multiple
+medical imaging modalities, for example CT and MR, are available,
+VFleet can produce merged views of both.
+
+<H3><A NAME="FlexTfun">Flexible Transfer Function</A></H3>
+
+<P>VFleet uses a very flexible mechanism to define the mapping from
+datasets to color and opacity values in the volume to be rendered.
+Instead of a simple look-up table mapping values to colors and
+opacities, complex mappings can be defined.  This allows data volumes
+to be masked, possibly by other data volumes.  One data field can define
+the visible region of another;  multiple data fields can contribute
+to the final image.
+
+<H2><A NAME="Limitations">Limitations of VFleet</A></H2>
+
+<H3><A NAME="RegularGrid">Regular Gridded Data</A></H3>
+<P>Most (but not all) volume renderers require the sample data to be
+given on a regular grid, like a 3D array.  VFleet is subject to this
+restriction.  If your data is not on a regular array, you will
+probably want to resample it onto a regular array before volume
+rendering it.  If the data is not on a regular array, it is much more
+difficult to determine which data elements are in front of which
+others, so the rendering process becomes more complex and hence
+slower.
+
+<H3><A NAME="Commensurate">Commensurate Data</A></H3>
+<P>VFleet supports multiple simultaneous data volumes.  For example,
+one might want to render a volume of space which contained both a
+temperature field and a pressure field.  The current version of VFleet
+requires that all the data volumes being rendered at a given time have
+the same resolution and occupy the same volume of space, however.
+
+<H3><A NAME="SlowSpeed">Speed vs. Functionality Tradeoffs</A></H3>
+<P>VFleet is pretty quick, but its flexibility comes at some cost
+in speed.  If your rendering needs are simple, for example to apply
+a single color table to a single dataset of limited size, other volume
+renderers may do the job faster.  VFleet uses no special hardware, so
+if your platform has special hardware rendering support another
+renderer may do better.  This is particularly true if you are running
+on a Silicon Graphics machine with alpha blending hardware;  in that
+case you should certainly consider the 
+<A HREF="http://www.arc.umn.edu/html/gvl-software/bob.html">Bob</A>
+volume renderer.  VFleet gains some speed advantage by being distributed
+across multiple platforms, but the actual rendering task does not gain
+as much as it might from parallelism because the advantages of early
+ray termination are lost.  Also, VFleet uses a careful and complete
+rendering algorithm.  It can generate perspective projections and
+views from within the volume;  faster algorithms exist which do not
+have these features.
+
+<H2><A NAME="OtherVRen">Other Volume Renderers</A></H2>
+<P>There are a number of volume renderers available, some of them free.
+An introductory "class" in volume rendering is available
+<a href="http://www.psc.edu/training/vol_talk/Vol.Vis.0.html">here</a>,
+and an overview of volume visualization is available 
+<A HREF="http://www.dataspace.com/WWW/documents/tech-summary.html">here</A>.
+
+<P>Information on an interesting volume rendering subroutine library
+which uses a shear-warp algorithm is available 
+<A HREF="http://www-graphics.stanford.edu/">here</A>.
+This renderer is described in a Siggraph 1994 paper by Philippe Lacroute
+and Marc Levoy.
+
+<P>If you have a Silicon Graphics workstation with alpha blending
+hardware support, you should certainly check out 
+<A HREF="http://www.arc.umn.edu/html/gvl-software/bob.html">Bob</A>
+from the Army High Performance Computing Research Center.  
+
+<P>Another particularly interesting volume renderer is 
+<A HREF="http://www.cs.sunysb.edu/~volvis/vislab/volvis.html">VolVis</A>,
+developed at SUNY Stony Brook.  This volume renderer is aimed somewhat
+towards computer graphics, rather than data visualization.  The San
+Diego Supercomputing Center makes available a client/server volume
+renderer called 
+<A HREF="http://www.sdsc.edu/NetV/NetV.html">
+NetV</A>.
+
+<H2><A NAME="QuickStart">Quick Start Instructions</A></H2>
+
+<P>If you are the impatient type, you can follow these instructions
+to start up VFleet and generate a few images.  They use the input files
+<b>vortices.hdf</b> and <b>sample.tfn</b> which are distributed with
+VFleet.
+
+<OL>
+<LI>Start VFleet with the command <code>vfleet</code>
+<LI>Use the <em>Open Data File</em> item in the <em>File</em> menu to load
+vortices.hdf .
+<LI>Use the <em>Open Transfer Function</em> item in the <em></em> menu to
+load sample.tfn .
+<LI>Use the <em>Go!</em> option in the <em>Render</em> menu to cause an
+image of the data volume to be rendered.
+<LI>By dragging with the left mouse button on the sphere in the "track ball"
+window, you can rotate the object to re-render it from a different viewpoint.
+</OL>
+
+<H2><A NAME="Principles">Principles of Operation</A></H2>
+
+<H3><A NAME="DataandSampleVols">Data Volumes and the Sample Volume</H3></A>
+
+<P>In using VFleet, a distinction must be made between <em>data
+volumes</em> (of which there may be more than one) and the <em>sample
+volume</em> which is computed from the data.  The sample volume is
+best thought of as a 3D block filled with a pattern of varying color
+and opacity.  At any given time there is only one sample volume, and
+it is the sample volume that is actually rendered to produce a final
+image.
+
+<P>The data volumes are
+loaded directly from user data files;  the sample volume is computed
+from the data volumes using the <em>transfer function</em> (see
+below).  It takes some time to do this computation, so the software
+keeps track of when recomputation of the sample volume is needed and
+does it only when necessary.  Recomputation will be needed any time a
+data volume changes, or any time the transfer function changes.
+Changes of viewpoint and some changes of rendering parameters do not
+require recomputation of the sample volume.
+
+<P>All data volumes used in a single run of VFleet must have the same
+physical size and resolution.  These values are set by the first
+datavolume loaded.  The sample volume takes its size and resolution
+from that of the data volumes.
+
+<H3><A NAME="TFuns">Transfer Functions</A></H3>
+
+<P>The <em>transfer function</em> is the map between the collection of
+data volumes and the sample volume.  It is literally a function which
+takes a set of 3D scalar fields and a location in space as input and
+produces a color and an opacity as output.  This function is applied
+at each grid point in the volume under study, producing the colors and
+opacities that make up the sample volume.
+
+<P>The transfer function mechanism employed by VFleet is quite
+flexible.  VFleet is an entirely object oriented application written
+in C++, and the transfer functions are derived classes of a single
+base class.  It is easy to add new transfer function types, simply by
+creating new derived classes of the base class.
+
+<P>In particular, one transfer function type is a <dfn>sum transfer
+function</dfn>, which is basically just a container for a set of other
+transfer functions.  The color and opacity produced by the sum
+transfer function is the sum of the colors and opacities of its
+children, each with an appropriate weighting factor (with appropriate
+clamping performed to keep the results within the valid range).  By
+using a sum transfer function, other transfer functions can be
+combined and a hierarchy of transfer functions can be constructed.  
+
+<P>VFleet currently supports the following types of transfer functions:
+<dl>
+<dt> Table Transfer Function
+<dd>This type of transfer function takes a single data volume as
+input.  For each datum in the data volume, the transfer function
+simply looks up the value of the datum in a table to produce red,
+green, blue, and opacity (alpha) values.  These values are then
+applied to the corresponding voxel of the sample volume.  Input data
+are quantized to one byte.
+</dd>
+<dt> Gradient Table Transfer Function
+<dd>This type of transfer function is much like a Table 
+Transfer Function.  It takes a single data volume as
+input.  For each datum in the data volume, the transfer function
+simply looks up the value of the datum in a table to produce red,
+green, blue, and opacity (alpha) values.  Once the color components
+are in hand, they are scaled by the magnitude of the local gradient of
+the data volume relative to the maximum gradient in the data volume.
+The scaled values are then applied to the corresponding voxel of the
+sample volume.  This results in color being deposited where the
+gradient is strong, and thus where the input data is rapidly varying,
+and not elsewhere.  Input data
+are quantized to one byte.
+</dd>
+<dt> Sum Transfer Function
+<dd>This type of transfer function has one or more other transfer functions
+as children.  To calculate its output color, it calculates the the
+output color of each of its children, multiplies each by a weight, and
+sums the result.
+</dd>
+<dt> Smart Sum Transfer Function
+<dd>This transfer function type is much like a Sum Transfer Function, but
+it handles opacities in a slightly different way.  With a Sum Transfer 
+Function, if one child produces color but no opacity at a given location
+while another child produces opacity at that location, the opacity is
+applied to the color to make visible "ink" at that location.  This can
+be useful, but sometimes it is not what is desired.  The Smart Sum
+Transfer Function keeps the opacities and colors of different children
+from blending.  It is a little slower than a Sum Transfer Function because
+it must do more work.
+</dd>
+<dt> Mask Transfer Function
+<dd>This transfer function type contains two other transfer functions,
+a mask and a transfer function to be masked.  The opacity of the transfer
+function to be masked is multiplied by the opacity of the mask.  This means
+that the mask can be used to "cut away" unwanted parts of the sample volume
+produced.
+</dd>
+<dt> Block Transfer Function
+<dd>This type is very convenient to use with the Mask Transfer Function.
+It produces a simple hexahedral block of a constant color, or alternately
+fills the region outside a block with constant color.  When used with a
+Mask Transfer Function, the Block Transfer Function can be used to make
+everything outside (or alternately inside) the block disappear.
+</dd>
+<dt> Bounding Box Transfer Function
+<dd> This transfer function type draws a box around the sample volume.
+The X, Y, and Z axes of the box are colored red, green, and blue respectively.
+</dd>
+</dl>
+
+<H3><A NAME="Rendering">Rendering</A></H3>
+
+<P>Once the data volumes and transfer function have been used to
+construct the sample volume, that volume must be rendered.  In
+single process mode, this is done by ray casting.  Viewing rays are
+generated based on the current camera and image parameters, and
+propagated into the sample volume.  As each ray passes into the
+volume, it acquires color and opacity based on the values in the
+voxels it passes through.  A lighting algorithm may also be used,
+based on a light source and the direction of the local opacity
+gradient.  As each ray becomes completely opaque or passes out the
+back of the sample volume, the ray color and opacity are stored in the
+appropriate pixel of the final image.
+
+<P>In <A HREF="#DistribExec">distributed execution</A> mode, the data
+volume is divided into blocks, and each block is rendered by this ray
+casting algorithm.  The images produced by the individual renders are
+then combined to produce a total image.
+
+<P>In VFleet's basic rendering mode, each voxel makes a contribution
+to the color of a ray as if it were a block of material of constant
+color and opacity.  This approximation is somewhat akin
+to the "splatting" method of volume rendering, but with each splat
+accurately representing the shape and location of the cell which
+produces it.  The overall rendering method might thus be described as
+"ray splatting".
+
+<P>In trilinear interpolation mode, color values are interpolated between
+the values of the nearest 8 grid points.  A recursive integration technique
+is used to carefully calculate the color of each ray.  This produces
+accurate and attractive images, but it can be much slower than the basic
+mode.
+
+<P>If the individual voxels are small enough, some voxels may be missed
+completely by the rays, since only one ray is shot per pixel of the final
+image.  An option called 3D mipmapping can be used to avoid this.  This
+feature uses averaged values for regions of voxels to make sure all the
+sample data contributes to the final image.  Under some circumstances,
+turning this option on can actually speed up rendering.
+
+<H3><A NAME="AccelTech">Acceleration Techniques</A></H3>
+
+<P>The most interesting acceleration technique used by VFleet is
+parallel operation.  This is discussed in its own <A
+HREF="#DistribExec">section</A> below.
+
+<P>A number of techniques are used to accelerate the rendering process
+which is used by a single process.  Distributed rendering involved
+dividing the volume to be rendered up into blocks, each of which is
+rendered by an individual worker process using the acceleration
+techniques described here.
+
+<P>The voxels of the sample volume are stored in an octree
+representation.  (More accurately this is an oct-pyramid, since all
+resolutions are actually stored for each voxel).  Ray traversal
+through the octree is done using the <em>Smart</em> algorithm, as
+described in <em>The Smart Navigation of a Ray Through an
+Oct-Tree</em> by Spackman and Willis (<cite>Computers and Graphics
+Vol. 15, No. 2, pp. 185-194, 1991</cite>).  A simple enhancement to
+that algorithm allows the distance the ray spends within a given cell
+to be quickly calculated, assisting the calculation of color
+accumulation in the ray.
+
+<P>Given the octree representation of the sample volume, it is
+possible to determine the opacity and opacity range of each octcell at
+sample volume calculation time.  Cells with low opacity are skipped
+over at rendering time; the threshold for this is adjustable.  Since
+the last contributions to the color and opacity of a ray (when its
+opacity is already high) converge slowly and change the ray's values
+little, integration along a ray can also be stopped when the ray's
+opacity is high but not quite 1.0.  Both of these acceleration
+techniques are described in <em>Efficient Ray Tracing of Volume
+Data</em> by Levoy (<cite>ACM Transactions on Graphics, Vol. 9, No. 3,
+pp. 245-261, July 1990</cite>).
+
+<P>One further enhancement is to store a measure of the accuracy with
+which each sample in the octree hierarchy represents the color and
+opacity of its children.  As a ray passes through the sample volume,
+it carries with it a "goal" accuracy against which the accuracy of
+each cell it reaches is compared.  If the cell is sufficiently
+accurate, the contribution to the color of the ray from all children
+of the cell can be calculated in one step, without recursive traversal
+of the cell's children.  This is a sort of ray casting adaptation of
+the acceleration technique described in <em>Hierarchical Splatting: A
+Progressive Refinement Algorithm for Volume Rendering</em> by Laur and
+Hanrahan (<cite>Computer Graphics, Vol. 25, No. 4, pp. 285-288, July
+1991</cite>). As the ray becomes more opaque, it becomes less sensitive
+to errors in coloring, so coarser octree values can be used.  This
+method is described in <em>Fast Algorithms for Volume Ray Tracing</em>
+by Danskin and Hanrahan (<cite>Proceedings of the 1992 Workshop on
+Volume Visualization, October 1992, pp. 91-98, published by ACM</cite>).
+This acceleration technique is not currently used in trilinear interpolation
+mode.
+
+<H2><A NAME="DistribExec">Distributed Execution</A></H2>
+
+<P>VFleet is a completely object oriented application, written in C++.
+All network interaction is incorporated into a network-aware base
+class, called the <dfn>baseNet</dfn> class.  A network volume renderer
+is in fact a member of a class which is derived both from the baseNet
+class and from the <dfn>baseVRen</dfn> volume renderer base class.
+Thus, to the user interface, the network version of operation looks
+almost exactly identical to local operation.
+
+<P>There is one caveat to this.  VFleet features a facility to view
+individual slices of the sample volume, to aid in editing the transfer
+function.  In network operation the sample volumes are not cached on
+the user interface process, so the needed sample data must be read
+from disk to display the image of any given slice.  Depending on the
+slice direction chosen and the pattern of data storage on disk, the
+display of some slices can be quite slow.  The current version of
+VFleet makes this sacrifice to avoid limiting the size of the usable
+datasets based on the local memory of the user interface platform.
+
+<P>VFleet runs in distributed mode in the 
+<dfn><A HREF="http://www.epm.ornl.gov/pvm/pvm_home.html">PVM</A>
+(Parallel
+Virtual Machine) environment, developed at Oak Ridge National Labs.
+To run VFleet in distributed mode you must first install PVM on the
+network of processors you plan to use.  
+
+<P>The PVM execution environment in which VFleet runs is controlled by
+a special process called the <dfn>Service Manager</dfn>.  This process
+receives requests from other processes in the environment and
+allocates resources for them.  If there is no service manager running,
+you must start one explicitly.  The service manager will in turn start
+a logging server, which is a process which collects logging messages
+from other processes.
+
+<P>When the <dfn>User Interface</dfn> part of VFleet is launched in this PVM
+environment, it contacts the service manager and begins requesting
+services.  Specifically, it request a logging service for itself, and
+then requests a <dfn>Compositing Renderer</dfn> process.  This is a
+process which controls a pair of sub-renderers, collecting
+images from them and compositing them together to make a final image.
+When the compositing renderer is created, it is allocated a number of
+processors to use in doing its job.
+
+<P>The compositing renderer then creates two children.  One will be a
+renderer in the same process as itself, while the other will be a
+remote renderer which will in turn be spawned by the Service Manager.
+Each of these child renderers is assigned 1/2 of the processors
+granted to its parent.  If the renderers have more than one processor
+available they are compositing renderers also, and in turn create
+their own children.  Any renderer with only one processor available
+becomes a <dfn>Ray Casting Renderer</dfn>, and renders its fraction of
+the data without further help.
+
+<P>The result is a recursive binary subdivision of the problem among
+a hierarchy of renderers, similar to that used by Ma et. al. in their
+paper <em>A Data-Distributed, Parallel Algorithm for Ray-Traced Volume
+Rendering</em> in the <cite>1993 Parallel Rendering Symposium
+Proceedings</cite>.  At each level of division, half of the volume to
+be rendered (split successively in the Y, Z, and X planes) is assigned
+to each child renderer.
+
+<P>As each independent rendering process starts up, it requests a
+logger of the Service Manager.  Assuming that there are eight
+rendering processes total, the following components would exist.
+There are 11 processes total- the 8 renderer processes, the User
+Interface, the Service Manager, and the logging server.  
+
+<P>In this case, the eight
+rendering processes contain a recursive binary hierarchy of
+renderers, as follows.  The first process spawned has had its volume
+divided three times, so it contains three compositing renderers and a
+ray caster.  (All of these are standard C++ class instances running in
+the same thread).  The renderer process spawned by the first split
+will have its subvolume divided two more times, and thus contains two
+compositing renderers and a ray casting renderer.  The two renderers
+spawned by the next splits of these two renderers will have their
+subvolumes divided once each, so they each will consist of one
+compositing renderer and one ray caster.  There will be four processes
+which are never split, and they will do ray casting only.  Thus the
+ray casting is done across eight processors, the first level of
+compositing is done across four processors, the second level across
+two processors, and the final level by one processor.  All the real
+computational work is done by these processes, and all display
+activity and user interaction is managed by the user interface.
+
+<P>The process hierarchy for the case of four renderers is shown 
+<A HREF="vfleet_procs.gif">here</A>.
+
+<P>Execution proceeds as follows.  One or more data volumes are loaded
+from the disk of the machine on which the user interface runs.  As
+each is loaded, it is passed first to the top-level compositing renderer
+process.  This process divides the volume up between its children,
+each child getting half.  These children divide the volume
+between their children in turn, until the ray casting renderers at the
+lowest level are reached.
+
+<P>A transfer function is then loaded or created by the user interface.
+(A data volume must first have been loaded, to set the size and
+resolution of the system).  This transfer function is passed to the
+worker renderers via their parents.
+
+<P>The sample volume is calculated.  Each worker calculates its own
+sample volume using the data volumes and transfer function it has
+received.  Certain other parameters, such as camera position and
+rendering option information, are specified at the user interface and
+passed via the compositing renderers to the ray casters which will
+ultimately do the rendering.
+
+<P>The user interface requests rendering to begin.  The request is
+passed down the hierarchy to the ray casters, which in turn begin
+rendering their parts of the sample volume.  Each child renders the
+entire view of the current camera;  for any given child only a part of
+that view may be occupied by the bounding box of its sample volume.
+
+<P>As each child completes its view, its image is passed back to its
+parent compositing renderer.  When both children of a compositing
+renderer have completed their tasks, the two images are composited in
+back-to-front order and the resulting image is passed to the
+compositing renderer's parent in turn.  The ultimate result is a final
+image of the entire, undivided sample volume.
+
+<P>This final image is passed back to the user interface, which
+displays it.  Note that each rendering process (compositing and ray
+tracing) feeds its result image to its parent when that image is
+ready, rather than in response to some demand from the parent process.
+
+<P>Manipulation of the user interface causes the rendering process
+and, if necessary, the sample volume calculation process to be
+repeated.  If only the viewpoint or some other rendering parameter is
+changed, new images can be generated without regenerating the sample
+volume.  If the transfer function or input data change, the sample
+volume will be recalculated when the next render is requested.
+
+<P>For specific details on initiating and shutting down distributed
+operation, see <A HREF="#DistribOp">Starting Up Distributed Mode</A> 
+and <A HREF="#QuitOp">Quitting</A> below.
+
+<H2><A NAME="OperInst">Operating Instructions</A></H2>
+
+<P>If you have not already read the section on 
+<A HREF="#Principles">Principals of Operation</A> you might want to do
+so now, to better understand the terminology used below.
+
+<p>If you are interested in specific instructions for running VFleet
+on SGI/Cray MPP systems (like the T3D and T3E), see the special
+documentation <a href="vfleet_cray_mpp.html">here</a>.
+
+<H3><A NAME="DistribOp">Starting Up in Distributed Mode</A></H3>
+
+<P>For an overview of how VFleet works in distributed operation, see the
+<A HREF="#DistribExec">Distributed Execution</A> section above.
+The discussion which follows assumes that an appropriate revision of
+<A HREF="http://www.epm.ornl.gov/pvm/pvm_home.html">PVM</A> has already been
+installed on your system.  PVM is not necessary for local execution,
+but must be properly installed for distributed execution.
+
+<P>To start up in distributed mode, you must first create your PVM
+virtual machine.  Instructions for doing this can be found in the
+standard PVM documentation.  Start the PVM daemons, and add the
+machines you wish to use as workers to the virtual machine.
+
+<P>Next you must start the <dfn>Service Manager</dfn>,
+<em>servman</em>.  The command line for servman is as follows:
+<blockquote>
+<pre>servman [-l <var>logserver</var>] [-r <var>rayworkerfile</var>]</pre> 
+</blockquote>
+where:
+<dl>
+<dt>logserver
+<dd>is the machine on which the logging server is to run.  In the
+usual case, this machine will need to open an X window on your
+workstation.  A PVM machine type (for example, SGI5) can also be used
+here. 
+</dd>
+<dt>rayworkerfile
+<dd>is a file containing machines or PVM machine types to be used as 
+ray casting workers.  One machine name or type appears per line.  If
+more workers are used than there are lines in the file, the service
+manager will loop back to the top of the list and start reusing names.
+Machine names should appear just as they did when you added the
+machines to your PVM virtual machine.  For example, the difference
+between <kbd>myhost</kbd> and <kbd>myhost.psc.edu</kbd> has been known
+to confuse PVM.  Including the same machine multiple times in the list
+will cause multiple worker processes to be spawned on that machine.  This
+can be useful if one machine has much more memory than another.
+</dd>
+</dl>
+
+<P>If any of the parameters to <kbd>servman</kbd> are omitted, PVM will
+pick machines to use for new processes in its usual inscrutable way.
+
+<P>At this point, the service manager should start the logging server;
+the logging server's window should appear on-screen.  If this fails to
+happen, the likely cause is that the PVM group server has failed to
+be automatically started up.  To remedy this problem, reset the PVM
+virtual machine, start the group server manually using the command:
+<blockquote>
+<pre>pvmgs &amp</pre>
+</blockquote>
+or by spawning pvmgs from the PVM console session, and restart 
+<kbd>servman</kbd>.  Another possible cause is that PVM is not properly
+transmitting the value of the DISPLAY environment variable.  This can
+generally be fixed by checking that DISPLAY is set appropriately, that 
+machine running the logging server has access to your display 
+(via <em>xhost</em> or an equivalent command), and that the value of
+the environment variable PVM_EXPORT includes the word DISPLAY.  Once 
+these conditions are met, halt and restart PVM and then restart the
+service manager.
+
+<P>The usual version of the logging server opens a window on your
+workstation screen and provides status messages from all the
+processes as rendering proceeds.  The message window will pop up when
+the VFleet user interface is started.  You will have to stretch it to
+be able to see all the messages from all the processes.
+
+<P>Once the PVM virtual machine is assembled and the service manager
+are running, distributed VFleet can be started up.  The command line
+is as follows.
+<blockquote>
+<pre>vfleet [-n <var>nslaves</var>] [-s tclscript] [-S server_tid_in_hex]</pre>
+</blockquote>
+where <var>nslaves</var> is the number of rendering workers and
+<var>tclscript</var> is the name of a 
+<A HREF="http://www.sunlabs.com:80/research/tcl/">Tcl</A>
+script to be run on start-up.  The <em>-S</em> option allows you to
+explicitly give the PVM tid of the service manager.  This is only
+necessary on systems where the PVM "group" mechanism is not properly
+implemented (for example, the SGI/Cray 
+<a href="vfleet_cray_mpp.html">T3E</a>).
+<p>
+Any
+number of workers can be used, but processor usage will be most
+efficient if the value given is a power of 2 (1, 2, 4, 8, etc.).  Note
+that this number need not correspond to the number of machines in your
+PVM virtual machine.  One machine can run multiple worker processes,
+and this may be appropriate if one machine is substantially faster or
+of larger memory than the others.  If the nslaves option is omitted,
+VFleet starts up in local mode.
+
+<H3><A NAME="LocalOp">Starting Up in Local Mode</A></H3>
+
+<P>To start VFleet in local mode, simply omit the <kbd>-n</kbd> parameter:
+<blockquote>
+<pre>vfleet [-s tclscript]</pre>
+</blockquote>
+where <var>tclscript</var> is the name of a 
+<A HREF="http://www.sunlabs.com:80/research/tcl/">Tcl</A>
+script to be run on start-up.
+
+<H3><A NAME="MainWindowOp">Main Window</A></H3>
+
+<P>When VFleet is started up, you will see the 
+<A HREF="main_window_1.1.gif">main window</A> of the application.  In addition
+to the menu bar, there are several important areas of the window.
+
+<P>The area displaying a sphere inside a box is the <dfn>Track Ball
+Area</dfn>.  To rotate the rendered view of the model, drag the mouse
+in the track ball area with the left mouse button down.  The ball will
+rotate as soon as the mouse button is released, and when the next view
+of the sample volume is rendered the volume will be oriented as the
+box in the track ball area is oriented.
+
+<P>The area above the track ball area will contain a list of data
+volumes as they are loaded.
+
+<P>The large blank area is the area where images will appear as they
+are rendered.
+
+<P>The area at the bottom of the screen is the <dfn>Message
+Area</dfn>.  Status messages from VFleet will appear there.  In
+distributed mode, these same messages and others will appear in the
+logger window.
+
+<H3><A NAME="LoadDataOp">Loading Input Data</A></H3>
+
+<P>To load a data file, select <em>Open Data File</em> from the
+<em>File</em> menu.  You will see the 
+<A HREF="open_datafile_1.1.gif">Open Data File</A> dialog, which is a
+standard Motif file selection dialog with a couple of added features.
+One is a selector which allows you to specify input file format;  at
+the moment the only option available is 
+<A HREF="http://hdf.ncsa.uiuc.edu/index.html">HDF</A>.
+
+<P>If you are running in distributed mode, the <em>Open Remote Data File</em>
+item in the <em>File</em> menu will also be available.  This option allows
+you to open and load a data file on the top level rendering host without
+first moving it to the host where you are running the user interface.  For
+large files, this can save a lot of file transfer time.  Selecting this
+option will display the <A HREF="open_remote_dialog.gif">Open Remote
+Data File</A> dialog.  It contains the same file format selector (currently
+supporting only <A HREF="http://hdf.ncsa.uiuc.edu/index.html">HDF</A>)
+found in the <em>Open Data File</em> dialog.  You
+can control the host running the top level rendering process using the
+list of rendering hosts given as input to the 
+<A HREF="#DistribOp">Service Manager</A>.  Note that you must provide
+a full directory path name in the directory slot of this dialog.  
+
+<P>These dialogs also contain options to allow you to set
+the physical dimensions of your dataset.  This effects the opacity of
+the sample volumes derived from this dataset;  a light year of glass is
+much more opaque than a micron of glass, for example.  This opacity
+scale factor can be controlled at rendering time, however, so the most
+important use of the dimensioning options is to set the <em>relative
+edge lengths</em> of the sample.  For example, if the sample volume is
+half as wide as it is high and deep, this should be specified in the
+Open Data File dialog when the dataset is loaded.  If it is not, the
+data volume will be assumed to be cubic, no matter what its array
+dimensions are.  Once the physical dimensions of a dataset have been
+established, they cannot be changed.
+
+<P>It is a requirement of the current version of VFleet that all data
+volumes have the same resolution and the same physical dimensions, so
+that they can all be considered to exactly overlay each other.  The
+sample volume calculated from these data volumes has the same
+resolution and dimensions.  Thus the resolution and dimensions of the
+first dataset loaded establish values for all subsequent datasets used
+in a given VFleet session.
+
+<P>In order to save memory, it may be necessary to free a dataset
+after it has been loaded.  This can be done by choosing the <em>Free
+DataVolume</em> option from the <em>File</em> menu.  This option pops
+up the <A HREF="free_datavol.gif">Free DataVolume</A> dialog.  To free
+one of the data volumes listed in the upper list, select it (causing
+it to appear in the Selection slot) and choose <em>OK</em>.  Memory
+associated with that datavolume will be freed.  This has no effect on
+the disk file which was read to load the data volume.
+
+<H3><A NAME="LoadTfunOp">Loading or Creating Transfer Functions</A></H3>
+
+<P>Transfer functions can be loaded with the <em>Open Transfer
+Function</em> option from the <em>File</em> menu, or created with the
+<em>Create/Edit Transfer Function</em> option.  The first option
+brings up a file selection dialog which allows you to select an
+existing transfer function file, while the second option opens a
+standard transfer function.  In either case, the 
+<dfn><A HREF="default_tfun_1.1.gif">Transfer Function Editor</A></dfn>
+appears.
+
+<P>If the Transfer Function Editor window is closed for any reason, it
+can be re-opened by selecting <em>Create/Edit Transfer Function</em>
+from the <em>File</em> menu.  If a transfer function already exists,
+the editor will show that function.
+
+<P>The Transfer Function Editor is probably the most complicated
+dialog in VFleet, but it is also the most useful.  The editor window
+contains a group of sub-windows which collectively represent the
+transfer function.
+
+<P>Every element of the Transfer Function Editor contains
+<em>Save</em>, <em>Delete</em>, <em>Set</em>, <em>Reset</em>, and
+<em>Help</em> buttons.  The <em>Save</em> button saves the given
+transfer function and all of its children to a file; this button in
+the top level Sum Transfer Function is equivalent to selecting
+<em>Save Transfer Function</em> from the <em>File</em> menu.  The
+<em>Delete</em> button deletes the given transfer function and all its
+children from the current transfer function hierarchy.  (Note that
+any file containing a copy of the transfer function is not effected).
+The <em>Set</em> button causes changes made by editing in the transfer
+function windows to take effect;  the <em>Reset</em> button resets a
+transfer function to its most recently set values.  Both <em>Set</em>
+and <em>Reset</em> effect both the given transfer function and all its
+children.  The <em>Help</em> button gives a description of the
+function and editing procedures for the given transfer function. 
+<strong>Note</strong> that you must click the <em>Set</em> button
+before any changes you make to a transfer function will take effect!
+
+<P>Each transfer function sub-window also includes a <em>weight</em>,
+which controls the magnitude of the contribution the transfer function
+makes to its parent transfer function.  (Transfer functions with no
+parent, like the top level Sum Transfer Function, do not have settable
+weights).  By adjusting the weight value up and down, the contribution
+of a given transfer function to the final rendered image can be
+increased or decreased.  Typical weight values are between 0.0 and
+1.0, although other values are not necessarily invalid.
+
+<P>The top level sub-window will be a Sum Transfer Function.
+Sub-windows representing other transfer functions, possibly including
+other Sum Transfer Functions, will be embedded in it.  New child
+transfer functions can be added using the <em>Add</em> selector within
+the Sum Transfer Function window.  The entire Sum Transfer Function
+can be saved or deleted using appropriate buttons.
+
+<P>The most common transfer function type is the Table Transfer Function;
+one or more of these may be present.
+Each of these contains a selector to specify which data
+volume the transfer function is to be applied to, a selector to
+specify which color component (red, green, blue, or alpha, where the
+last represents opacity) is currently being edited, and two windows.
+The lower window allows editing of the transfer function table.  By
+clicking or dragging in the window with the left mouse button, the
+values for the selected color component can be changed.  When the
+<em>Set</em> button is clicked, these changes take effect, and are
+reflected in the bar of colors which appears in the upper window.
+This bar shows the current state of the transfer function's color table.
+
+<P>Other transfer function types also exist, and may be included in the
+transfer function dialog.  The easiest way to learn about these is via
+the <em>Help</em> button on the individual transfer functions.
+
+<P>Saved transfer function files have the filename extension 
+<em>.tfn</em> .  These are clear text files, and can be edited by
+hand.  This can be useful if you want to adjust the values in a color
+table, for example.  It must be done carefully, however, because an
+invalid .tfn file can crash VFleet.
+
+<P>Saved transfer functions do not contain the names of the
+data volumes they are to be applied to.  This means that
+if you save a transfer function that uses more than one data
+volume, you may have to adjust the data volume selectors in the
+Transfer Function Editor when the transfer function is reloaded.
+The saved transfer function files do remember which of several loaded
+datasets are used, so if you reload datasets in the same order and then
+reload the saved transfer function, the correct datasets will be used
+in the correct places.
+
+<H3><A NAME="RenderOp">Rendering Menu Operations</A></H3>
+
+<H4><A NAME="GeneralRen">Rendering and Aborting Renders</A></H4>
+
+<P>Once datasets and a transfer function have been established, the
+sample volume can be built and rendered.  This is done by selecting
+the <em>Go!</em> option under the <em>Render</em> menu.  The model
+will be rendered from the viewpoint specified by the track ball area
+and the current camera, and will appear in the main window when it is
+complete.  Local and distributed rendering are initiated in the same
+way.  VFleet keeps track of changes which require the sample volume to
+be calculated or regenerated, and does the necessary calculations only
+when necessary.  The <em>Go!</em> option causes sample volume
+calculation as well as rendering whenever it is needed.
+
+<P>In distributed mode, the <em>Abort Render</em> option will abort a
+render in progress.  This option is currently not available in local
+mode.
+
+<P>When an image has been rendered, it can be saved to a file using
+the <em>Save Image</em> option from the <em>File</em> menu.  A number
+of output file formats are supported.
+
+<P>Other options in the <em>Render</em> menu produce dialogs that
+allow control over rendering parameters, and over the degree of
+approximation used in the rendering acceleration scheme.  Brief
+descriptions of these dialogs follow;  more information is available
+in the <em>Help</em>information for each dialog.
+
+<H4><A NAME="CamCtrl">Camera Controls</A></H4>
+
+<P>The <A HREF="cameractrls_1.1.gif">Camera Controls</A> dialog is used to
+set the characteristics of the camera.  The camera is considered to be at
+the <em>From</em> point, pointed at the <em>At</em> point.  The <em>Up</em>
+direction determines the rotation of the view about the line between these
+two points, so that the up direction is toward the top of the screen.  These
+values can be set directly, or the <em>dolly</em> and <em>twist</em> controls
+can be used to adjust them more conveniently.  
+
+<P>Another way to change the <em>At</em> and <em>From</em> points is
+by dragging with the middle mouse button in the rendered image in the
+main window.  For example, suppose some interesting feature of the
+image is shown near the edge of the image.  Move the mouse to the
+feature, press the middle mouse button, move the mouse to the center
+of the image, and release the middle mouse button.  The <em>From</em> and
+<em>At</em> points in the camera window will change so that the next render
+will show the feature in the center of the screen.  As usual, you must
+press the <em>Set</em> button in the <em>Camera Controls</em> 
+dialog for these changes
+to take effect.  The drag operation has moved the camera to produce
+the view you requested.  Two buttons, <em>shift at point only</em> and 
+<em>shift both at and from</em>, control whether one or both points are
+shifted to accomplish this.
+
+<P>The <em>Camera Controls</em> dialog also includes controls for setting
+the <em>fovea</em> angle and <em>hither</em> and <em>yon</em> clipping 
+distances.  The clipping distances can be set so that part of the data 
+volume is clipped away if desired.  <em>Parallel projection</em> can
+be toggled on if desired.
+
+<P>The dialog also maintains a list of
+cameras.  If a particularly useful viewpoint is found, it can be added
+to the list or even saved to a file for reuse later.  The <em>Help</em>
+information for this dialog explains this in more detail.
+
+<P>The view of the data is controlled by both the camera information and
+the track ball orientation.  It is important to remember that the track ball
+always shows in its window, even if the camera is pointed off into space
+somewhere.  If rendering an image produces nothing but blackness, check
+the following things.
+
+<ul>
+<li>Is the transfer function reasonable?  You can use a
+<A HREF="#ViewSliceOp">slice viewer</A> to check this.
+<li>Is the camera pointed at the origin?  The center of the data volume
+is always at coordinates (0.0, 0.0, 0.0).
+<li>Are the hither and yon distances reasonable?  Is the fovea open to a
+fairly wide angle?
+</ul>
+
+<H4><A NAME="RenCtrl">Renderer Controls</A></H4>
+
+<P>The <A HREF="rensettings_1.1.gif">Renderer Settings</A> dialog controls
+which features of the renderer are active.  <em>Lighting</em> can be turned
+on and off.  The <em>Fast Lighting</em> option saves some rendering time at the
+cost of small errors in lighting, particularly when the specular lighting
+option is on.  <em>3D MipMapping</em> improves accuracy and can improve 
+speed for very high-resolution datasets.  <em>Trilinear interpolation</em> 
+produces very nice images, but it can be quite slow.
+The <em>Opacity Scale</em> slider makes the volume more or less
+opaque.  
+
+<H4><A NAME="QualCtrl">Quality Controls</A></H4>
+
+<P>The three sliders in the 
+<A HREF="qualsettings_1.1.gif">Quality Settings</A> dialog control
+the accuracy with which the image is rendered.  The <em>Opacity Limit</em>
+slider controls the opacity at which the renderer decides a ray is opaque
+and stops integrating along it;  the higher the value, the more accurate
+the rendered image.  If the rendered image shows sharp boundaries between
+semi-transparent regions and opaque regions this slider may need to be
+adjusted.  The <em>Opacity Minimum</em> slider controls the minimum alpha
+value (on a scale of 1 to 100, out of a total data range of 0 to 255) below 
+which the color in a voxel is just skipped over.  Low values of this slider
+are more accurate.  The <em>Color Comp Error</em> slider controls the accuracy
+in color components that the renderer requires.  High positions of the slider
+make a more accurate image.  The rendering time in trilinear interpolation 
+mode is particularly sensitive to the value of this slider.
+
+
+<H3><A NAME="ViewSliceOp">Viewing Slices</A></H3>
+
+<P>The <em>Slices</em> menu provides options that produce slice
+images of the sample volume at constant X, Y, and Z.  For example, 
+<A HREF="xslice_1.1.gif">here</A> is an example of a slice at constant X.
+Views of individual slices are very useful in developing good transfer
+functions.  
+
+<P>The slider in this dialog controls which slice is shown;  the
+<em>Alpha scaled</em> button controls whether or not the image colors
+are multiplied by the corresponding opacity.  The <em>Close</em>
+button disposes of the view of the slice.
+
+<P>When the transfer function or the input data changes, the slice
+will be redrawn.  Since this requires applying the transfer function
+to every pixel in the slice, it can take a little time on large
+datasets or slow machines.
+
+<P>When VFleet is running in distributed mode, input data volumes are
+not cached on the local machine.  This means that the data needed to
+recalculate a slice must be read from the data files.  The order in
+which the data is stored in the data files thus affects the time it
+takes to recalculate a slice.  For HDF data files, X slices are
+fastest, Y slices are slower, and Z slices can be painfully slow.
+When VFleet is running in local mode the data is cached locally, so
+this is not a problem.
+
+<H3><A NAME="ImageOp">Image Menu</A></H3>
+
+<P>The <em>Tear Off Image</em> option in the <em>Image</em> menu
+causes a new window containing a copy of the current image to appear.
+This feature can be very useful for studying the effects of changes of
+transfer function or rendering parameters, for example.  Note that
+there is no way to save a torn-off image to a file, so if you wish to
+save an image to a file you must do so while that image is in the main
+window.
+
+<P>Other entries in the Image menu allow you to set the size of the
+image window.  This can also be done by simply dragging on the window
+corner, but precise settings are sometimes useful.  For example, when
+rendering an <A HREF="#ScriptsOp">animation</A> for video, the aspect
+ratios of the <em>640x480</em> and <em>320x240</em> settings match those
+of NTSC video.
+
+<H3><A NAME="QuitOp">Quitting</A></H3>
+
+<P>To quit VFleet, simply select <em>Quit</em> from the <em>File</em>
+menu.  In distributed mode, you will then want to issue a
+<kbd>reset</kbd> command to the PVM console to reset the PVM virtual
+machine, or a <kbd>halt</kbd> command to halt and shut down the
+virtual machine.
+
+<H3><A NAME="ScriptsOp">Scripts and Animation</A></H3>
+
+<P>The <em>Load Tcl Script</em> option in the <em>File</em> menu allows
+you to execute a script in the
+<A HREF="http://www.sunlabs.com:80/research/tcl/">Tcl</A>
+ command language.  In addition
+to the many standard Tcl scripting commands, other commands specific
+to controlling VFleet are supported.  See the section 
+<A HREF="#ScriptF">Scripts</A> below for details.
+
+<P>The <em>Abort Script</em> option in the <em>File</em> menu allows you
+to abort a script that is in the process of execution.  Because of the 
+limitations of the Tcl interpreter, the script may not abort immediately;
+it will abort on completion of the next VFleet-specific Tcl command.
+
+<H2><A NAME="InputOutputF">Input Files</A></H3>
+
+<H3><A NAME="DataF">Data Files</A></H3>
+
+<P>Data files for VFleet are HDF Scientific Dataset files, created
+using the 
+<A HREF="http://hdf.ncsa.uiuc.edu/index.html">
+NCSA Hierarchical Data Format</A> library.  HDF format provides a
+portable, machine-independent specification for binary data files
+which also contains the resolution and other descriptive information
+about the data.
+
+<P>VFleet requires input data files to be HDF Scientific Datasets
+representing 3D arrays.  Other types of HDF files will not work (but
+note that HDF provides utilities for converting between, say, a
+collection of images and a Scientific Dataset).  The data may be in
+any format- byte, integer, floating point, etc.  VFleet will rescale
+the data appropriately into the byte representation it uses internally.
+
+<P>Two utilities are provided with VFleet for converting data in other
+formats to HDF.  
+<A HREF="bytestohdf.html">bytestohdf</A>
+converts streams of binary unsigned bytes to HDF format;  
+<A HREF="floatstohdf.html">floatstohdf</A>
+converts streams of floating point values.  For example, the
+command:
+<blockquote>
+<pre>bytestohdf -o<var>outfile</var> <var>xdim</var> <var>ydim</var> <var>zdim</var> &lt <var>infile</var></pre>
+</blockquote>
+will read <em>xdim</em>*<em>ydim</em>*<em>zdim</em> bytes from the
+filename specified as <em>infile</em> and output an HDF file of the
+given name <em>outfile</em> containing the data.
+<p><strong>Note</strong> that for HDF data the Z index increments
+fastest.  This means that successive planes of data (defined by
+adjacent blocks in the input file) represent slices in planes of
+constant X.  The X dimension is thus the number of slices present,
+rather than the (perhaps more intuitive) Z dimension.  
+
+<p>For example, a dataset consisting of 100 planes of data, each plane
+being 200 by 300 voxels, would be arranged in the input file as a
+series of 100 blocks of data, each block representing a plane.  Each
+block in turn would consist of 200 rows of data, each 300 data
+elements long.  The appropriate <em>bytestohdf</em> command to convert
+such a dataset to HDF format would be:
+<blockquote>
+<pre>bytestohdf -ooutfile.hdf 100 200 300 &lt infile.raw</pre>
+</blockquote>
+
+<H3><A NAME="TfunF">Transfer Function File</A></H3>
+
+<P>VFleet's hierarchical transfer functions are stored in a special file
+format, the customary extension for which is <em>.tfn</em>.  Transfer
+function files are ascii, and can be edited, but this should be done
+with care as they are easily made invalid.
+Transfer function files consist of a hierarchy of blocks, with some
+transfer functions containing one or more sub-blocks which
+represent their children in the hierarchy.
+
+<P>Transfer functions can be read and written from VFleet either in
+whole or in part.  For example, when editing a Sum Transfer Function,
+it is possible to read in another transfer function and make that
+transfer function a child of the Sum Transfer Function being edited.
+This new child may itself be or become a hierarchy.  Likewise, it is
+possible to save an entire transfer function or only a sub-part of it.
+Each sub-part of a transfer function has its own <em>save</em>
+button in the transfer function editor.  When saving a transfer
+function, <strong> be sure to use the <em>save</em> button for the
+block you want, and not for some child of that block!</strong>
+
+<H3><A NAME="ImageF">Images</A></H3>
+
+<P>VFleet can save rendered images in several formats, including
+Postscript and Tiff.  Some configurations of VFleet can save images
+in a great variety of formats.  This is done using the 
+<A HREF="http://www.sdsc.edu/newweb/projects/Newsletters/gsnov92/imageTools.html">
+ImageTools</A>
+utilities developed at the <A HREF="http://www.sdsc.edu/Home.html">
+San Diego Supercomputing Center</A>.
+
+<H3><A NAME="ScriptF">Scripts</A></H3>
+
+<P>The <em>Load Tcl Script</em> option in the <em>File</em> menu allows
+you to execute a script in the
+<A HREF="http://www.sunlabs.com:80/research/tcl/">Tcl</A>
+ command language.  In addition
+to the many standard Tcl scripting commands, the following commands are
+supported.
+
+<DL>
+
+<dt>camera set_at <var>x</var> <var>y</var> <var>z</var>
+<dd>Set the camera to look at the given position.
+
+<dt>camera set_from <var>x</var> <var>y</var> <var>z</var>
+<dd>Set the camera to look from the given position.
+
+<dt>camera set_up <var>x</var> <var>y</var> <var>z</var>
+<dd>Set the camera so that the given vector direction is "up".
+
+<dt>camera set_fovea <var>angle</var>
+<dd>Set the camera fovea angle to the given angle in degrees.
+
+<dt>camera set_hither_yon <var>hither</var> <var>yon</var>
+<dd>Set the camera hither and yon clipping distances to the given values.
+
+<dt>camera parallel
+<dd>Set the camera to use parallel projection.  In this state, the fovea
+and viewing distance determine the width of the view.
+
+<dt>camera perspective
+<dd>Set the camera to use perspective projection.
+
+<dt>camera add_cam_to_list
+<dd>Cause the current camera to be added to the camera list.  This list
+can be accessed via the <A HREF="#CamCtrl">Camera Controls</A> dialog 
+in the <em>Render</em> menu.
+
+<dt>load_data <var>filename</var>
+<dd>The load_data command causes data to be read from the
+given <var>filename</var>.  A new
+data volume becomes available within VFleet.
+
+<dt>load_remote_data <var>pathname</var>
+<dd>The load_data command causes data to be read from the
+given <var>pathname</var> on the <em>top level rendering host</em>,
+making a new data volume available within VFleet.  
+Note that the full path name of the file must be provided.  
+This command works only when operating in distributed mode, but
+in all other respects is like <em>load_data</em>.
+
+<dt>load_tfun <var>filename</var>
+<dd>The load_tfun command causes a new transfer function to be loaded from
+the file specified by the given <var>filename</var>,
+completely replacing the current transfer function.
+
+<dt>orient <var>angle</var> <var>axis_x</var> <var>axis_y</var> <var>axis_z</var>
+<dd>The orient command rotates the data volume by <var>angle</var> degrees
+about the axis specified by <var>axis_x</var>, <var>axis_y</var>, and
+<var>axis_z</var>.  The rotation is with respect to the initial unrotated
+orientation of the model, rather than being cumulative with other rotations.
+
+<dt>quit_vfleet
+<dd>This command causes VFleet to exit.  Since the Tcl interpreter is part
+of VFleet, that exits too.
+
+<DT>render
+<DD>The render command causes the volume to be rendered, with the current
+transfer function, viewpoint, etc.
+
+<dt>replace_data <var>index</var> <var>filename</var>
+<dd>The replace_data command takes an integer <var>index</var> and a 
+<var>filename</var> as
+parameters.  The filename is read as a data file, and the new data volume
+replaces the index'th data volume in the list of volumes previously
+read in.  Indices count from 1;  zero is not a valid index.  The existing
+transfer function comes to reference the new data volume wherever it
+previously referenced the replaced data volume.  This command allows
+animations to be made in which a series of data files represents an
+evolving system.
+
+<dt>replace_remote_data <var>index</var> <var>pathname</var>
+<dd>The replace_data command takes an integer <var>index</var> and a 
+<var>pathname</var> as
+parameters.  The <var>pathname</var> must be the full path name of a
+file on the <em>top level rendering host</em>.  
+The file is read as a data file, and the new data volume
+replaces the index'th data volume in the list of volumes previously
+read in.  This command works only when running in distributed mode,
+but in all other respects is equivalent to <em>replace_data</em> above.
+
+<dt>resize_image <var>width</var> <var>height</var>
+<dd>Resize the image window to the given size, so that subsequent renders are
+done at that resolution.
+
+<DT>rotate <var>angle</var> <var>axis_x</var> <var>axis_y</var> <var>axis_z</var>
+<DD>The rotate command is just like the orient command, except that rotations
+are cumulative.
+
+<DT>save_image <var>filename</var>
+<DD>The same_image command saves the currently rendered image to the file
+specified by the given <var>filename</var>.  Note that the image file type 
+does not
+change based on the extension used in the filename.  You must set the file
+type using the <em>Save Image</em> option in the <em>File</em> menu (and then
+selecting <em>Cancel</em> in that dialog if you do not wish to actually save
+an image) before executing your script.
+
+<dt>set_control use_light <var>bool</var>
+<dd>Turn lighting on or off for rendering.  <var>bool</var> is a Tcl boolean
+value, for example 1, 0, "true", "false", "yes", or "no".
+
+<dt>set_control fast_light <var>bool</var>
+<dd>Turn fast lighting on or off for rendering.
+
+<dt>set_control specular <var>bool</var>
+<dd>Turn specular lighting on or off for rendering.
+
+<dt>set_control trilin <var>bool</var>
+<dd>Turn trilinear interpolation on or off for rendering.
+
+<dt>set_control mipmap <var>bool</var>
+<dd>Turn 3D mipmapping on or off for rendering.
+
+<dt>set_control opacity <var>float</var>
+<dd>Set the opacity scaling factor to the given value for rendering.
+
+<dt>set_control fast_light <var>bool</var>
+<dd>Turn fast lighting on or off for rendering.
+
+</DL>
+
+<P>The <em>Abort Script</em> option in the <em>File</em> menu allows you
+to abort a script that is in the process of execution.  Because of the 
+limitations of the Tcl interpreter, the script may not abort immediately;
+it will abort on completion of the next VFleet-specific Tcl command.
+
+<P>The following simple script rotates the model through 360
+degrees in 120 steps (at 3 degrees per step), saving an image at each step.
+The rotation is about the Y axis.
+
+<PRE>
+#This file does a 360 degree rotation in 3 degree steps
+set i 0
+while { $i < 120 } {
+        render 
+	set fname [ format "frame_%04d.tiff" $i ]
+        save_image $fname
+        rotate 3.0 0.0 1.0 0.0
+        incr i 1
+        }
+</PRE>
+
+<P>The following script zooms the camera in to the center of the
+volume.
+
+<PRE>
+#This file zooms to the center of the volume in 10 steps.
+set nsteps 10
+set i 0
+set x_at 0.0
+set y_at 0.0
+set z_at 0.0
+set x_from 10.0
+set y_from 0.0
+set z_from 0.0
+set x_delta [expr ($x_from + 1.0) / $nsteps ]
+camera set_hither_yon 0.01 20.0
+while { $i < $nsteps } {
+    camera set_at $x_at $y_at $z_at
+    camera set_from $x_from $y_from $z_from
+    render 
+    set fname [ format "frame_%04d.tiff" $i ]
+    save_image $fname
+    set x_at [expr $x_at - $x_delta]
+    set x_from [expr $x_from - $x_delta]
+    incr i 1
+}
+</PRE>
+
+<P>The following script loads and renders a series of datasets to produce
+a time animation.  VFleet exits after generating the last frame.  The script
+assumes that the VFleet has been set up with an appropriate transfer function,
+camera, view, and image type to render the first frame.
+
+<PRE>
+#This file steps through a series of datasets, rendering each
+set framenum_min 0
+set framenum_max 120
+set i $framenum_min
+while { $i <= $framenum_max } {
+    set data_fname [ format "datafile_%04d.hdf" $i ]
+    set img_fname [ format "frame_%04d.tiff" $i ]
+    replace_data 1 $data_fname
+    render 
+    save_image $img_fname
+    incr i 1
+}
+quit_vfleet
+</PRE>
+
+
+<H2><A NAME="RSN">Real Soon Now</A></H2>
+
+<P>The following enhancements are in the queue.  Note that no promises are
+made as to when or even if they will be carried out.
+
+<H3><A NAME="MoreTFuns">More Transfer Functions</A></H3>
+
+<P>The transfer function mechanism in VFleet is quite general, and it
+is easy to add new transfer functions.  Transfer functions may be
+added to calculate vector quantities like vorticity magnitude, and to
+more efficiently handle RGB datasets.
+
+<H3><A NAME="GeometricalPrims">Geometrical Primitives</A></H3>
+
+<P>Some facility to support geometrical primitives like polygons and
+spheres should be added, either directly or via a clever transfer function.
+
+<H3><A NAME="MoreScriptFunc">More UI and Script Functionality</A></H3>
+
+<P>The scripting mechanism does not yet support the full functionality of
+the UI;  this should be remedied.
+
+<H3><A NAME="AltRenderers">Alternate Renderers</A></H3>
+
+<P>The state of the art in volume rendering algorithms may have moved
+past ray casting toward shear-warp algorithms, and one may be
+implemented for use with VFleet.  See, for example, Lacroute and
+Levoy's recent Siggraph paper (<cite>Siggraph 1994 Conference
+Proceedings, pp. 451-458, 1994</cite> 
+<A HREF="http://www-graphics.stanford.edu/">here</A>).
+These algorithms are also particularly well suited to execution on
+shared-memory multiprocessors.
+
+<H3><A NAME="AltDists">Alternate Parallel Distributions</A></H3>
+
+<P>The current system for distributing the rendering computation over
+multiple machines is easy to implement and general, but it is not very
+efficient.  Each subvolume is rendered completely, even if parts or all
+of the subvolume are obscured by opaque regions of subvolumes closer to
+the camera.  Alternate approaches could improve on this situation.
+In any case, VFleet needs a multithreaded implementation for use on
+SMP machines.
+
+<P>
+
+<ADDRESS>
+VFleet User's Guide / Joel Welling, Pittsburgh Supercomputing Center
+/ welling@psc.edu
+</ADDRESS>

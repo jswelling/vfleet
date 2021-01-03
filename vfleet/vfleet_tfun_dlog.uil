@@ -1,0 +1,2003 @@
+!
+!	This UIL code defines the transfer function editor dialog for VFleet
+!
+
+procedure
+	open_tfun_file_cb();
+	save_tfun_file_cb();
+        xtfunhandler_create_cb(integer);
+	xtfunhandler_expose_cb(integer);
+	xtfunhandler_set_edit_color_cb(integer);
+        xtfunhandler_set_cb();
+        xtfunhandler_reset_cb();
+        xtfunhandler_delete_cb();
+	xtfunhandler_save_cb();
+	xtfunhandler_save_file_cb();
+        xtfunhandler_add_cb(integer);
+	xtfunhandler_add_file_cb();
+        maskxtfunhandler_btn_press_cb(integer);
+        blockxtfunhandler_indx_chng_cb();
+
+value label_font: 
+	font('-ADOBE-Helvetica-Bold-R-*-*-12-*-*-*-*-*-*');
+
+value block_tfun_help_text :
+        "This dialog allows you to save and edit block transfer functions.  " &
+        "This transfer function type defines a block shaped volume of " &
+        "constant color, with edges aligned with the coordinate axes.  " &
+        "Block transfer functions are most often used as masks.\n" &
+        "\n" &
+        "The areas marked \"llf\" and \"trb\" allow you to change the " &
+        "locations of the lower left front and top right back corners of " &
+        "the block respectively.  The area marked \"rgba\" allows you to " &
+        "change the red, green, blue, and opacity components of the color.\n" &
+        "\n" &
+        "The Indices toggle button causes the coordinates and color " &
+        "components to be displayed as integer indices when depressed.  " &
+        "When this toggle button is not depressed, coordinates are shown " &
+        "as real values in the coordinate system of the data sets, and " &
+        "color components are shown as real values between 0.0 and 1.0.  " &
+        "When the Inside toggle button is depressed, the transfer function " &
+        "places its color inside the given block.  When this button is not " &
+        "set, the region outside the block is colored.\n" &
+        "\n" &
+	"Each transfer function has a Weight, which the mask transfer " &
+	"function above it uses as a multiplier when applying its output. " &
+	"By increasing or decreasing the weight, you can change the amount " &
+	"of effect the transfer function has on the final rendered image.  " &
+	"(The weight of the top level transfer function cannot be " &
+	"changed because it has no parent).\n" &
+	"\n" &
+	"No change you make to this transfer function takes effect until " &
+	"the Set button is pressed.  To go back to the previous version " &
+	"of this transfer function press the Reset button.\n" &
+	"\n" &
+	"The Save button allows you to save the entire sum transfer " &
+	"function with all its children to a file." ;
+
+value mask_tfun_help_text :
+        "This dialog allows you to save and edit mask transfer functions, " &
+        "and to load other transfer functions as masks or to be masked.  " &
+        "The transfer function used as a mask provides a field of opacities " &
+        "which multiply the opacities of the transfer function to which the " &
+        "mask is applied.  This means that the mask transfer function can be "&
+        "used to select regions for viewing.\n" &
+        "\n" &
+        "There are two Select buttons in this dialog.  One allows you to " &
+        "select a type of transfer function to use as a mask, while the " &
+        "other allows you to select a type of transfer function to which " &
+        "to apply the mask.  If those transfer functions have already been " &
+        "defined, their respective Select buttons will be dimmed.  To change "&
+        "either transfer function, delete it;  the appropriate Select button "&
+        "will become active so that a replacement can be chosen.\n" &
+        "\n" &
+	"Each transfer function has a Weight, which the mask transfer " &
+	"function above it uses as a multiplier when applying its output. " &
+	"By increasing or decreasing the weight, you can change the amount " &
+	"of effect the transfer function has on the final rendered image.  " &
+	"(The weight of the top level transfer function cannot be " &
+	"changed because it has no parent).\n" &
+	"\n" &
+	"No change you make to this transfer function takes effect until " &
+	"the Set button is pressed.  To go back to the previous version " &
+	"of this transfer function press the Reset button.\n" &
+	"\n" &
+	"The Save button allows you to save the entire sum transfer " &
+	"function with all its children to a file." ;
+
+value sum_tfun_help_text :
+	"This dialog allows you to save and edit sum transfer functions, " &
+	"and to load other transfer functions for inclusion in the sum " &
+	"transfer function.\n" &
+	"\n" &
+	"Note that the window containing this transfer function includes " &
+	"sub-windows containing sub-transfer-functions.  These " &
+	"are the transfer functions the outputs of which are summed by " &
+	"this sum transfer function.  For help with these sub-functions, " &
+	"see their own help information.\n" &
+	"\n" &
+	"The Add button allows you to add another transfer function as a " &
+	"child of this transfer function.  To delete a child, use the " &
+	"Delete button in the child's sub-window.  The main Delete button " &
+	"in the sum transfer function's window will delete the entire " &
+	"sum transfer function and all its children.\n" &
+	"\n" &
+	"Each transfer function has a Weight, which the sum transfer " &
+	"function above it uses as a multiplier when adding its output " &
+	"to that of the sum transfer function's other children.  By " &
+	"increasing or decreasing the weight, you can change the amount " &
+	"of effect the transfer function has on the final rendered image.  " &
+	"(The weight of the top level sum transfer function cannot be " &
+	"changed because it has no parent).\n" &
+	"\n" &
+	"No change you make to this transfer function takes effect until " &
+	"the Set button is pressed.  To go back to the previous version " &
+	"of this transfer function press the Reset button.\n" &
+	"\n" &
+	"The Save button allows you to save the entire sum transfer " &
+	"function with all its children to a file." ;
+	
+value ssum_tfun_help_text :
+     "This dialog allows you to save and edit smartsum transfer functions, " &
+     "and to load other transfer functions for inclusion in the smartsum " &
+     "transfer function.\n" &
+	"\n" &
+	"Final alpha of each smartsum transfer function level is calculated " &
+	"by a formula: a = 1 - Product (i = 1, n) (1 - a(i)*w), where n is " &
+	"the number descendants and w is weight.  final red is calculated " &
+	"by r = 1 - P(i = 1, n)(1 - a(i)*r(i)*w), so are green and blue." &
+     "\n" &
+     "\n" &
+     "Note that the window containing this transfer function includes " &
+     "sub-windows containing sub-transfer-functions.  These " &
+     "are the transfer functions the outputs of which are summed by " &
+     "this sum transfer function.  For help with these sub-functions, " &
+     "see their own help information.\n" &
+     "\n" &
+     "The Add button allows you to add another transfer function as a " &
+     "child of this transfer function.  To delete a child, use the " &
+     "Delete button in the child's sub-window.  The main Delete button " &
+     "in the smartsum transfer function's window will delete the entire " &
+     "smartsum transfer function and all its children.\n" &
+     "\n" &
+     "Each transfer function has a Weight, which the smartsum transfer " &
+     "function above it uses as a multiplier when adding its output " &
+     "to that of the smartsum transfer function's other children.  By " &
+     "increasing or decreasing the weight, you can change the amount " &
+     "of effect the transfer function has on the final rendered image.  " &
+     "(The weight of the top level smartsum transfer function cannot be " &
+     "changed because it has no parent).\n" &
+     "\n" &
+     "No change you make to this transfer function takes effect until " &
+     "the Set button is pressed.  To go back to the previous version " &
+     "of this transfer function press the Reset button.\n" &
+     "\n" &
+     "The Save button allows you to save the entire smartsum transfer " &
+     "function with all its children to a file." ;
+
+value table_tfun_help_text :
+	"This sub-window contains a table transfer function.  Data values " &
+	"are looked up in the table, and the color and intensity values " &
+	"which correspond to the given data values are added into the " &
+	"final rendered image.\n" &
+	"\n" &
+	"There are two selection switches included in this transfer " &
+	"function.  One allows you to select the data volume to which " &
+	"the transfer function will be applied.  The other allows you to " &
+	"select whether edits to the transfer function table will effect " &
+	"the red, green, blue, or opacity (alpha) color components.\n" &
+	"\n" &
+	"The lower window allows you to edit the transfer table.  If you " &
+	"click the left mouse button in that window, the currently " &
+	"selected color component is " &
+	"changed at the point where you click.  If you press the left " &
+	"mouse button and drag in that window, the selected color component " &
+	"will be set to a linear ramp between the points where you " &
+	"press and release the button.  Try it;  the results will be " &
+	"easier to understand than the explaination.\n" &
+	"\n" &
+	"No change you make to the transfer function table will take effect " &
+	"until the Set button is pressed.  The Reset button will set the " &
+	"table back to its previous values.  The upper window shows the " &
+	"current transfer function table, with appropriate scaling by " &
+	"opacity.\n" &
+	"\n" &
+	"Each transfer function has a Weight, which the sum transfer " &
+	"function above it uses as a multiplier when adding its output " &
+	"to that of the sum transfer function's other children.  By " &
+	"increasing or decreasing the weight, you can change the amount " &
+	"of effect the transfer function has on the final rendered image.\n" &
+	"\n" &
+	"No change you make to this transfer function takes effect until " &
+	"the Set button is pressed.  To go back to the previous version " &
+	"of this transfer function press the Reset button.\n" &
+	"\n" &
+	"The Save button allows you to save the entire sum transfer " &
+	"function with all its children to a file." ;
+
+value grad_tfun_help_text :
+	"This sub-window contains a gradient table transfer function.  " &
+	"Data values " &
+	"are looked up in the table, and the color and intensity values " &
+	"which correspond to the given data values are found.  These values " &
+	"are then multiplied by the magnitude of the local gradient of " &
+	"the selected data volume, scaled by the maximum gradient in the " &
+	"data volume.  The effect of this is to deposit color where the " &
+	"gradient is high, but not where the data volume is fairly " &
+	"constant.  This can be used to reveal rapidly varying areas of " &
+	"the dataset.\n" &
+	"\n" &
+	"There are two selection switches included in this transfer " &
+	"function.  One allows you to select the data volume to which " &
+	"the transfer function will be applied.  The other allows you to " &
+	"select whether edits to the transfer function table will effect " &
+	"the red, green, blue, or opacity (alpha) color components.\n" &
+	"\n" &
+	"The lower window allows you to edit the transfer table.  If you " &
+	"click the left mouse button in that window, the currently " &
+	"selected color component is " &
+	"changed at the point where you click.  If you press the left " &
+	"mouse button and drag in that window, the selected color component " &
+	"will be set to a linear ramp between the points where you " &
+	"press and release the button.  Try it;  the results will be " &
+	"easier to understand than the explaination.\n" &
+	"\n" &
+	"No change you make to the transfer function table will take effect " &
+	"until the Set button is pressed.  The Reset button will set the " &
+	"table back to its previous values.  The upper window shows the " &
+	"current transfer function table, with appropriate scaling by " &
+	"opacity.\n" &
+	"\n" &
+	"Each transfer function has a Weight, which the sum transfer " &
+	"function above it uses as a multiplier when adding its output " &
+	"to that of the sum transfer function's other children.  By " &
+	"increasing or decreasing the weight, you can change the amount " &
+	"of effect the transfer function has on the final rendered image.\n" &
+	"\n" &
+	"No change you make to this transfer function takes effect until " &
+	"the Set button is pressed.  To go back to the previous version " &
+	"of this transfer function press the Reset button.\n" &
+	"\n" &
+	"The Save button allows you to save the entire sum transfer " &
+	"function with all its children to a file." ;
+
+value bbox_tfun_help_text :
+	"This sub-window contains a bounding box transfer function.  It " &
+	"causes an outline box to be drawn at the boundaries of the volume." ;
+
+value tfun_file_help_text :
+"Use this dialog to load a transfer function.";
+
+value save_tfun_help_text :
+"Use this dialog to save a transfer function.";
+
+value invalid_tfun_file_msg : exported
+compound_string("Error: unable to load the given transfer function file.");
+
+value no_tfun_yet_msg : exported
+compound_string("Error: no transfer function loaded or defined.");
+
+value delete_tfun_anyway_msg : exported
+compound_string("Do you really want to delete this Transfer Function?");
+
+value sum_tfun_file_help_text :
+"Use this dialog to load a transfer function from a file, and add it as " &
+"a child of this SumTransferFunction.";
+
+value ssum_tfun_file_help_text :
+"Use this dialog to load a transfer function from a file, and add it as " &
+"a child of this SumTransferFunction.";
+
+value red_line_clr : exported color('red', foreground);
+value green_line_clr : exported color('green', foreground);
+value blue_line_clr : exported color('blue', foreground);
+value alpha_line_clr : exported color('yellow', foreground);
+value prev_line_clr : exported color('gray', foreground);
+
+identifier owner_object;
+identifier owner_weight;
+
+!----------------------- sumTfun dialog stuff
+
+object sum_tfun_dlog : XmFormDialog {
+  arguments {
+    XmNdialogTitle = "Transfer Function";
+    XmNuserData = owner_object;
+  };
+  controls { XmFrame sum_tfun_frame;
+  };
+};
+
+object sum_tfun_topform : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+    XmNheight= 67;
+    XmNwidth=284;
+  };
+  controls { 
+    XmFrame sum_tfun_frame;
+  };
+};
+
+object sum_tfun_frame : XmFrame {
+  arguments {
+    XmNuserData = owner_object;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNshadowType = XmSHADOW_OUT;
+  };
+  controls {
+    XmForm sum_tfun_form;
+  };
+};
+
+object sum_tfun_form : XmForm {
+  arguments {
+    XmNuserData = owner_object;
+  };
+  controls {
+    XmForm sum_tfun_topcontrols;
+    XmForm sum_tfun_buttonform;
+    XmScrolledWindow sum_tfun_kidscroll;
+  };
+};
+
+object sum_tfun_topcontrols : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmLabel sum_tfun_label;
+    XmLabel tfun_weight_label;
+    XmTextField tfun_weight_text;
+    XmPushButton tfun_delete_pb;
+  };
+};
+
+object sum_tfun_buttonform : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= sum_tfun_topcontrols;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+    XmNfractionBase = 6;
+  };
+  controls {
+    XmMenuBar sum_tfun_add_bar;
+    XmPushButton tfun_save;
+    XmPushButton tfun_set;
+    XmPushButton tfun_reset;
+    XmPushButton sum_tfun_help;
+  };
+};
+
+object sum_tfun_kidscroll : XmScrolledWindow {
+  arguments {
+    XmNuserData = owner_object;
+    XmNvisualPolicy= XmCONSTANT;
+    XmNscrollingPolicy= XmAUTOMATIC;
+    XmNworkWindow= sum_tfun_kidform;
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= sum_tfun_buttonform;
+    XmNbottomAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmForm sum_tfun_kidform;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(2);
+  };
+};
+
+object sum_tfun_kidform : XmForm {
+  arguments {
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(1);
+  };
+};
+
+object tfun_save : XmPushButton {
+  arguments {
+    XmNlabelString = "Save";
+    XmNfontList = label_font;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 2;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 3;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure xtfunhandler_save_cb();
+  };
+};
+
+object tfun_set : XmPushButton {
+  arguments {
+    XmNlabelString = "Set";
+    XmNmnemonic = keysym('S');
+    XmNfontList = label_font;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 3;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 4;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure xtfunhandler_set_cb();
+  };
+};
+
+object tfun_reset : XmPushButton {
+  arguments {
+    XmNlabelString = "Reset";
+    XmNmnemonic = keysym('R');
+    XmNfontList = label_font;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 4;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 5;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure xtfunhandler_reset_cb();
+  };
+};
+
+object sum_tfun_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNmnemonic = keysym('H');
+    XmNfontList = label_font;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 5;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 6;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb( sum_tfun_help_text );
+  };
+};
+
+object tfun_weight_label : XmLabel {
+  arguments {
+    XmNlabelString = "weight:";
+    XmNfontList = label_font;
+    XmNrightAttachment = XmATTACH_WIDGET;
+    XmNrightWidget = tfun_weight_text;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNbottomOffset = 7;
+  };
+};
+
+object tfun_weight_text : XmTextField {
+  arguments {
+    XmNvalue = owner_weight;
+    XmNcolumns = 5;
+    XmNrightAttachment = XmATTACH_WIDGET;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNrightWidget = tfun_delete_pb;
+    XmNrightOffset = 5;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xtfunhandler_create_cb(0);
+  };
+};
+
+object tfun_delete_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "Delete";
+    XmNfontList = label_font;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback= procedure xtfunhandler_delete_cb();
+  };
+};
+
+object sum_tfun_label : XmLabel {
+  arguments {
+    XmNlabelString= "Sum Tfun";
+    XmNfontList = label_font;
+    XmNbottomAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNbottomOffset = 7;
+  };
+
+};
+
+object sum_tfun_add_bar : XmMenuBar {
+  arguments {
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  controls { 
+    XmCascadeButton sum_tfun_add;
+  };
+};
+
+object sum_tfun_add : XmCascadeButton {
+  arguments {
+    XmNlabelString = "Add";
+    XmNfontList = label_font;
+    XmNuserData = owner_object;
+  };
+  controls { XmPulldownMenu sum_tfun_add_pd; };
+};
+
+object sum_tfun_add_pd : XmPulldownMenu {
+  controls {
+    XmPushButton sum_tfun_add_table_pb;
+    XmPushButton sum_tfun_add_grad_pb;
+    XmPushButton sum_tfun_add_sum_pb;
+    XmPushButton sum_tfun_add_ssum_pb;
+    XmPushButton sum_tfun_add_bbox_pb;
+    XmPushButton sum_tfun_add_block_pb;
+    XmPushButton sum_tfun_add_mask_pb;
+    XmPushButton sum_tfun_add_file_pb;
+  };
+};
+
+object sum_tfun_add_table_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "Table Tfun";
+    XmNfontList = label_font;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback= procedure xtfunhandler_add_cb( 0 );
+  };
+};
+
+object sum_tfun_add_grad_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "Gradient Tfun";
+    XmNfontList = label_font;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback= procedure xtfunhandler_add_cb( 1 );
+  };
+};
+
+object sum_tfun_add_sum_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "Sum Tfun";
+    XmNfontList = label_font;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback= procedure xtfunhandler_add_cb( 2 );
+  };
+};
+
+object sum_tfun_add_ssum_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "SSum Tfun";
+    XmNfontList = label_font;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback= procedure xtfunhandler_add_cb( 8 );
+  };
+};
+
+object sum_tfun_add_bbox_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "BoundBox Tfun";
+    XmNfontList = label_font;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback= procedure xtfunhandler_add_cb( 3 );
+  };
+};
+
+object sum_tfun_add_block_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "Block Tfun";
+    XmNfontList = label_font;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback= procedure xtfunhandler_add_cb( 10 );
+  };
+};
+
+object sum_tfun_add_mask_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "Mask Tfun";
+    XmNfontList = label_font;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback= procedure xtfunhandler_add_cb( 9 );
+  };
+};
+
+object sum_tfun_add_file_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "From file...";
+    XmNfontList = label_font;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback= procedure xtfunhandler_add_cb( 4 );
+  };
+};
+
+object add_tfun_file_box : XmFileSelectionDialog {
+    arguments {
+    	XmNdialogTitle = "Load a Transfer Function File";
+	XmNdirMask = "*.tfn";
+        XmNautoUnmanage = true;
+        XmNuserData = owner_object;
+    };
+    callbacks {
+        XmNhelpCallback=procedure help_cb(tfun_file_help_text);
+	XmNokCallback=procedure xtfunhandler_add_file_cb();
+	XmNcancelCallback= procedure xtfunhandler_add_file_cb();
+    };    
+};
+
+!----------------------- ssumTfun dialog stuff
+object ssum_tfun_dlog : XmFormDialog {
+  arguments {
+    XmNdialogTitle = "Transfer Function";
+    XmNuserData = owner_object;
+  };
+  controls { XmFrame ssum_tfun_frame;
+  };
+};
+
+object ssum_tfun_topform : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+    XmNheight= 67;
+    XmNwidth=284;
+  };
+  controls { 
+    XmFrame ssum_tfun_frame;
+  };
+};
+
+object ssum_tfun_frame : XmFrame {
+  arguments {
+    XmNuserData = owner_object;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNshadowType = XmSHADOW_OUT;
+  };
+  controls {
+    XmForm ssum_tfun_form;
+  };
+};
+
+object ssum_tfun_form : XmForm {
+  arguments {
+    XmNuserData = owner_object;
+  };
+  controls {
+    XmForm ssum_tfun_topcontrols;
+    XmForm ssum_tfun_buttonform;
+    XmScrolledWindow ssum_tfun_kidscroll;
+  };
+};
+
+object ssum_tfun_topcontrols : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmLabel ssum_tfun_label;
+    XmLabel tfun_weight_label;
+    XmTextField tfun_weight_text;
+    XmPushButton tfun_delete_pb;
+  };
+};
+
+object ssum_tfun_buttonform : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= ssum_tfun_topcontrols;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+    XmNfractionBase = 6;
+  };
+  controls {
+    XmMenuBar ssum_tfun_add_bar;
+    XmPushButton tfun_save;
+    XmPushButton tfun_set;
+    XmPushButton tfun_reset;
+    XmPushButton ssum_tfun_help;
+  };
+};
+
+object ssum_tfun_kidscroll : XmScrolledWindow {
+  arguments {
+    XmNuserData = owner_object;
+    XmNvisualPolicy= XmCONSTANT;
+    XmNscrollingPolicy= XmAUTOMATIC;
+    XmNworkWindow= ssum_tfun_kidform;
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= ssum_tfun_buttonform;
+    XmNbottomAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmForm ssum_tfun_kidform;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(2);
+  };
+};
+
+object ssum_tfun_kidform : XmForm {
+  arguments {
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(1);
+  };
+};
+
+object ssum_tfun_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNmnemonic = keysym('H');
+    XmNfontList = label_font;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 5;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 6;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb( ssum_tfun_help_text );
+  };
+};
+
+object ssum_tfun_label : XmLabel {
+  arguments {
+    XmNlabelString= "SSum Tfun";
+    XmNfontList = label_font;
+    XmNbottomAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNbottomOffset = 7;
+  };
+};
+
+object ssum_tfun_add_bar : XmMenuBar {
+  arguments {
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  controls { 
+    XmCascadeButton sum_tfun_add;
+  };
+};
+
+!----------------------- bboxTfun dialog stuff
+
+object bbox_tfun_dlog : XmFormDialog {
+    arguments {
+	XmNdialogTitle = "BBox Transfer Function";
+    };
+    controls {
+	XmFrame bbox_tfun_frame;
+    };
+};
+
+object bbox_tfun_topform : XmForm {
+    arguments {
+      XmNheight = 67;
+      XmNtopAttachment= XmATTACH_FORM;
+      XmNleftAttachment= XmATTACH_FORM;
+      XmNrightAttachment= XmATTACH_FORM;
+    };
+    controls {
+	XmFrame bbox_tfun_frame;
+    };
+};
+
+object bbox_tfun_frame : XmFrame {
+  arguments {
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNshadowType = XmSHADOW_OUT;
+  };
+  controls {
+    XmForm bbox_tfun_form;
+  };
+};
+
+object bbox_tfun_form : XmForm {
+    arguments { 
+      XmNfractionBase = 6;
+    };
+    controls {
+      XmForm bbox_tfun_topcontrols;
+      XmPushButton tfun_save;
+      XmPushButton tfun_set;
+      XmPushButton tfun_reset;
+      XmPushButton bbox_tfun_help;
+    };
+};
+
+object bbox_tfun_topcontrols : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmLabel bbox_tfun_label;
+    XmLabel tfun_weight_label;
+    XmTextField tfun_weight_text;
+    XmPushButton tfun_delete_pb;
+  };
+};
+
+object bbox_tfun_label : XmLabel {
+  arguments {
+    XmNlabelString= "BoundBox Tfun";
+    XmNfontList = label_font;
+    XmNbottomAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNbottomOffset = 7;
+  };
+};
+
+object bbox_tfun_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNmnemonic = keysym('H');
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = bbox_tfun_topcontrols;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 5;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 6;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb( bbox_tfun_help_text );
+  };
+};
+
+!----------------------- tableTfun dialog stuff
+
+object table_tfun_dlog : XmFormDialog {
+    arguments {
+	XmNdialogTitle = "Table Transfer Function";
+    };
+    controls {
+	XmFrame table_tfun_frame;
+    };
+};
+
+object table_tfun_topform : XmForm {
+    arguments {
+      XmNnoResize = true;
+      XmNheight = 294;
+      XmNwidth = 284;
+      XmNtopAttachment= XmATTACH_FORM;
+      XmNleftAttachment= XmATTACH_FORM;
+      XmNrightAttachment= XmATTACH_FORM;
+    };
+    controls {
+	XmFrame table_tfun_frame;
+    };
+};
+
+object table_tfun_frame : XmFrame {
+  arguments {
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNshadowType = XmSHADOW_OUT;
+  };
+  controls {
+    XmForm table_tfun_form;
+  };
+};
+
+object table_tfun_form : XmForm {
+    arguments { 
+      XmNfractionBase = 6;
+    };
+    controls {
+      XmForm table_tfun_topcontrols;
+      XmFrame table_tfun_image_area_frame;
+      XmFrame table_tfun_edit_area_frame;
+      XmOptionMenu table_tfun_which_dvol;
+      XmOptionMenu table_tfun_edit_which_clr;
+      XmPushButton tfun_save;
+      XmPushButton tfun_set;
+      XmPushButton tfun_reset;
+      XmPushButton table_tfun_help;
+    };
+};
+
+object table_tfun_topcontrols : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmLabel table_tfun_label;
+    XmLabel tfun_weight_label;
+    XmTextField tfun_weight_text;
+    XmPushButton tfun_delete_pb;
+  };
+};
+
+object table_tfun_label : XmLabel {
+  arguments {
+    XmNlabelString= "Table Tfun";
+    XmNfontList = label_font;
+    XmNbottomAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNbottomOffset = 7;
+  };
+};
+
+object table_tfun_which_dvol : XmOptionMenu {
+  arguments {
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNbottomAttachment= XmATTACH_WIDGET;
+    XmNbottomWidget= table_tfun_edit_which_clr;
+    XmNuserData = owner_object;
+  };
+  controls {
+    XmPulldownMenu table_tfun_which_dvol_pd;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(4);
+  };
+};
+
+object table_tfun_which_dvol_pd : XmPulldownMenu {
+  arguments {
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(3);
+  };
+};
+
+object table_tfun_edit_which_clr : XmOptionMenu {
+    arguments {
+	XmNleftAttachment= XmATTACH_FORM;
+	XmNbottomAttachment= XmATTACH_FORM;
+    };
+    controls {
+	XmPulldownMenu table_tfun_edit_which_clr_pd;
+    };
+};
+
+object table_tfun_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNmnemonic = keysym('H');
+    XmNfontList = label_font;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 5;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 6;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb( table_tfun_help_text );
+  };
+};
+
+object table_tfun_edit_which_clr_pd : XmPulldownMenu {
+    controls {
+	XmPushButton table_tfun_red_pb;
+	XmPushButton table_tfun_green_pb;
+	XmPushButton table_tfun_blue_pb;
+	XmPushButton table_tfun_alpha_pb;
+	};
+};
+
+object table_tfun_red_pb : XmPushButton {
+    arguments {
+	XmNlabelString = "Red";
+        XmNfontList = label_font;
+	XmNuserData = owner_object;
+    };
+    callbacks {
+	XmNactivateCallback = procedure xtfunhandler_set_edit_color_cb(0);
+    };
+};
+
+object table_tfun_green_pb : XmPushButton {
+    arguments {
+	XmNlabelString = "Green";
+        XmNfontList = label_font;
+	XmNuserData = owner_object;
+    };
+    callbacks {
+	XmNactivateCallback = procedure xtfunhandler_set_edit_color_cb(1);
+    };
+};
+
+object table_tfun_blue_pb : XmPushButton {
+    arguments {
+	XmNlabelString = "Blue";
+        XmNfontList = label_font;
+	XmNuserData = owner_object;
+    };
+    callbacks {
+	XmNactivateCallback = procedure xtfunhandler_set_edit_color_cb(2);
+    };
+};
+
+object table_tfun_alpha_pb : XmPushButton {
+    arguments {
+	XmNlabelString = "Alpha";
+        XmNfontList = label_font;
+	XmNuserData = owner_object;
+    };
+    callbacks {
+	XmNactivateCallback = procedure xtfunhandler_set_edit_color_cb(3);
+    };
+};
+
+object table_tfun_image_area_frame : XmFrame {
+    arguments {
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+	XmNtopAttachment = XmATTACH_WIDGET;
+	XmNtopWidget = table_tfun_topcontrols;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = table_tfun_edit_area_frame;
+	XmNleftOffset = 5;
+	XmNtopOffset = 5;
+	XmNrightOffset = 5;
+	XmNbottomOffset = 5;
+	XmNshadowType = XmSHADOW_IN;
+    };
+    controls {
+	XmDrawingArea table_tfun_image_area;
+    };
+};
+
+object table_tfun_edit_area_frame : XmFrame {
+    arguments {
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = table_tfun_which_dvol;
+	XmNleftOffset = 5;
+	XmNtopOffset = 5;
+	XmNrightOffset = 5;
+	XmNbottomOffset = 5;
+	XmNshadowType = XmSHADOW_IN;
+    };
+    controls {
+	XmDrawingArea table_tfun_edit_area;
+    };
+};
+
+object table_tfun_image_area : XmDrawingArea {
+    arguments {
+	XmNwidth = 256;
+	XmNheight = 50;
+	XmNresizePolicy = XmRESIZE_NONE;
+	XmNbackground = color('Black');
+	XmNuserData = owner_object;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure xtfunhandler_create_cb(1);
+	XmNexposeCallback = procedure xtfunhandler_expose_cb(1);
+    };
+};
+
+object table_tfun_edit_area : XmDrawingArea {
+    arguments {
+	XmNwidth = 256;
+	XmNheight = 101;
+	XmNresizePolicy = XmRESIZE_NONE;
+	XmNbackground = color('Black');
+	XmNuserData = owner_object;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure xtfunhandler_create_cb(2);
+	XmNexposeCallback = procedure xtfunhandler_expose_cb(2);
+    };
+};
+
+!---------- Gradient tableTfun dialog stuff
+
+object grad_tfun_dlog : XmFormDialog {
+    arguments {
+	XmNdialogTitle = "Gradient Transfer Function";
+    };
+    controls {
+	XmFrame grad_tfun_frame;
+    };
+};
+
+object grad_tfun_topform : XmForm {
+    arguments {
+      XmNnoResize = true;
+      XmNheight = 294;
+      XmNwidth = 284;
+      XmNtopAttachment= XmATTACH_FORM;
+      XmNleftAttachment= XmATTACH_FORM;
+      XmNrightAttachment= XmATTACH_FORM;
+    };
+    controls {
+	XmFrame grad_tfun_frame;
+    };
+};
+
+object grad_tfun_frame : XmFrame {
+  arguments {
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNshadowType = XmSHADOW_OUT;
+  };
+  controls {
+    XmForm grad_tfun_form;
+  };
+};
+
+object grad_tfun_form : XmForm {
+    arguments { 
+      XmNfractionBase = 6;
+    };
+    controls {
+      XmForm grad_tfun_topcontrols;
+      XmFrame grad_tfun_image_area_frame;
+      XmFrame grad_tfun_edit_area_frame;
+      XmOptionMenu grad_tfun_which_dvol;
+      XmOptionMenu grad_tfun_edit_which_clr;
+      XmPushButton tfun_save;
+      XmPushButton tfun_set;
+      XmPushButton tfun_reset;
+      XmPushButton grad_tfun_help;
+    };
+};
+
+object grad_tfun_which_dvol : XmOptionMenu {
+  arguments {
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNbottomAttachment= XmATTACH_WIDGET;
+    XmNbottomWidget= grad_tfun_edit_which_clr;
+    XmNuserData = owner_object;
+  };
+  controls {
+    XmPulldownMenu grad_tfun_which_dvol_pd;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(4);
+  };
+};
+
+object grad_tfun_which_dvol_pd : XmPulldownMenu {
+  arguments {
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(3);
+  };
+};
+
+object grad_tfun_topcontrols : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmLabel grad_tfun_label;
+    XmLabel tfun_weight_label;
+    XmTextField tfun_weight_text;
+    XmPushButton tfun_delete_pb;
+  };
+};
+
+object grad_tfun_label : XmLabel {
+  arguments {
+    XmNlabelString= "Gradient Tfun";
+    XmNfontList = label_font;
+    XmNbottomAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNbottomOffset = 7;
+  };
+};
+
+object grad_tfun_edit_which_clr : XmOptionMenu {
+    arguments {
+	XmNleftAttachment= XmATTACH_FORM;
+	XmNbottomAttachment= XmATTACH_FORM;
+    };
+    controls {
+	XmPulldownMenu grad_tfun_edit_which_clr_pd;
+    };
+};
+
+object grad_tfun_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNmnemonic = keysym('H');
+    XmNfontList = label_font;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 5;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 6;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb( grad_tfun_help_text );
+  };
+};
+
+object grad_tfun_edit_which_clr_pd : XmPulldownMenu {
+    controls {
+	XmPushButton grad_tfun_red_pb;
+	XmPushButton grad_tfun_green_pb;
+	XmPushButton grad_tfun_blue_pb;
+	XmPushButton grad_tfun_alpha_pb;
+	};
+};
+
+object grad_tfun_red_pb : XmPushButton {
+    arguments {
+	XmNlabelString = "Red";
+        XmNfontList = label_font;
+	XmNuserData = owner_object;
+    };
+    callbacks {
+	XmNactivateCallback = procedure xtfunhandler_set_edit_color_cb(0);
+    };
+};
+
+object grad_tfun_green_pb : XmPushButton {
+    arguments {
+	XmNlabelString = "Green";
+        XmNfontList = label_font;
+	XmNuserData = owner_object;
+    };
+    callbacks {
+	XmNactivateCallback = procedure xtfunhandler_set_edit_color_cb(1);
+    };
+};
+
+object grad_tfun_blue_pb : XmPushButton {
+    arguments {
+	XmNlabelString = "Blue";
+        XmNfontList = label_font;
+	XmNuserData = owner_object;
+    };
+    callbacks {
+	XmNactivateCallback = procedure xtfunhandler_set_edit_color_cb(2);
+    };
+};
+
+object grad_tfun_alpha_pb : XmPushButton {
+    arguments {
+	XmNlabelString = "Alpha";
+        XmNfontList = label_font;
+	XmNuserData = owner_object;
+    };
+    callbacks {
+	XmNactivateCallback = procedure xtfunhandler_set_edit_color_cb(3);
+    };
+};
+
+object grad_tfun_image_area_frame : XmFrame {
+    arguments {
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+	XmNtopAttachment = XmATTACH_WIDGET;
+	XmNtopWidget = grad_tfun_topcontrols;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = grad_tfun_edit_area_frame;
+	XmNleftOffset = 5;
+	XmNtopOffset = 5;
+	XmNrightOffset = 5;
+	XmNbottomOffset = 5;
+	XmNshadowType = XmSHADOW_IN;
+    };
+    controls {
+	XmDrawingArea grad_tfun_image_area;
+    };
+};
+
+object grad_tfun_edit_area_frame : XmFrame {
+    arguments {
+	XmNbackground = control_background;
+	XmNforeground = control_foreground;
+	XmNleftAttachment = XmATTACH_FORM;
+	XmNrightAttachment = XmATTACH_FORM;
+	XmNbottomAttachment = XmATTACH_WIDGET;
+	XmNbottomWidget = grad_tfun_which_dvol;
+	XmNleftOffset = 5;
+	XmNtopOffset = 5;
+	XmNrightOffset = 5;
+	XmNbottomOffset = 5;
+	XmNshadowType = XmSHADOW_IN;
+    };
+    controls {
+	XmDrawingArea grad_tfun_edit_area;
+    };
+};
+
+object grad_tfun_image_area : XmDrawingArea {
+    arguments {
+	XmNwidth = 256;
+	XmNheight = 50;
+	XmNresizePolicy = XmRESIZE_NONE;
+	XmNbackground = color('Black');
+	XmNuserData = owner_object;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure xtfunhandler_create_cb(1);
+	XmNexposeCallback = procedure xtfunhandler_expose_cb(1);
+    };
+};
+
+object grad_tfun_edit_area : XmDrawingArea {
+    arguments {
+	XmNwidth = 256;
+	XmNheight = 101;
+	XmNresizePolicy = XmRESIZE_NONE;
+	XmNbackground = color('Black');
+	XmNuserData = owner_object;
+    };
+    callbacks {
+        MrmNcreateCallback = procedure xtfunhandler_create_cb(2);
+	XmNexposeCallback = procedure xtfunhandler_expose_cb(2);
+    };
+};
+
+!-------------------- tfun load and save file selection dialogs
+
+object tfun_file_box : XmFileSelectionDialog {
+    arguments {
+        XmNdialogTitle = "Load a Transfer Function File";
+	XmNdirMask = "*.tfn";
+        XmNautoUnmanage = true;
+    };
+    callbacks {
+        XmNhelpCallback=procedure help_cb(tfun_file_help_text);
+        MrmNcreateCallback = procedure create_cb(k_tfun_open_id);
+	XmNokCallback=procedure open_tfun_file_cb();
+    };    
+};
+
+object tfun_save_file_box : XmFileSelectionDialog {
+    arguments {
+        XmNdialogTitle = "Save Transfer Function File";
+	XmNdirMask = "*.tfn";
+        XmNautoUnmanage = false;
+    };
+    callbacks {
+        XmNhelpCallback=procedure help_cb(save_tfun_help_text);
+        MrmNcreateCallback = procedure create_cb(k_tfun_save_id);
+	XmNokCallback=procedure save_tfun_file_cb();
+	XmNcancelCallback = procedure unmanage_cb();
+    };    
+};
+
+object tfun_subpart_save_file_box : XmFileSelectionDialog {
+    arguments {
+        XmNdialogTitle = "Save Transfer Function File";
+	XmNdirMask = "*.tfn";
+        XmNautoUnmanage = false;
+	XmNuserData = owner_object;
+    };
+    callbacks {
+        XmNhelpCallback=procedure help_cb(save_tfun_help_text);
+        MrmNcreateCallback = procedure create_cb(k_tfun_save_id);
+	XmNokCallback=procedure xtfunhandler_save_file_cb();
+	XmNcancelCallback = procedure unmanage_cb();
+    };    
+};
+
+!----------------------- blockTfun dialog stuff
+
+object block_tfun_dlog : XmFormDialog {
+    arguments {
+	XmNdialogTitle = "Block Transfer Function";
+    };
+    controls {
+	XmFrame block_tfun_frame;
+    };
+};
+
+object block_tfun_topform : XmForm {
+    arguments {
+      XmNtopAttachment= XmATTACH_FORM;
+      XmNleftAttachment= XmATTACH_FORM;
+      XmNrightAttachment= XmATTACH_FORM;
+      XmNheight= 162;
+      XmNwidth=284;
+    };
+    controls {
+	XmFrame block_tfun_frame;
+    };
+};
+
+object block_tfun_frame : XmFrame {
+  arguments {
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNshadowType = XmSHADOW_OUT;
+  };
+  controls {
+    XmForm block_tfun_form;
+  };
+};
+
+object block_tfun_form : XmForm {
+    arguments { 
+      XmNfractionBase = 6;
+    };
+    controls {
+      XmForm block_tfun_topcontrols;
+      XmForm block_settings_form;
+      XmForm block_tfun_buttonform;
+    };
+};
+
+object block_tfun_topcontrols : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmLabel block_tfun_label;
+    XmLabel tfun_weight_label;
+    XmTextField tfun_weight_text;
+    XmPushButton tfun_delete_pb;
+  };
+};
+
+object block_tfun_label : XmLabel {
+  arguments {
+    XmNlabelString= "Block Tfun";
+    XmNfontList = label_font;
+    XmNbottomAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNbottomOffset = 7;
+  };
+};
+
+object block_settings_form : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= block_tfun_topcontrols;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmLabel block_llf_label;
+    XmTextField block_llf_x_text;
+    XmTextField block_llf_y_text;
+    XmTextField block_llf_z_text;
+    XmLabel block_trb_label;
+    XmTextField block_trb_x_text;
+    XmTextField block_trb_y_text;
+    XmTextField block_trb_z_text;
+    XmLabel block_rgba_label;
+    XmTextField block_rgba_r_text;
+    XmTextField block_rgba_g_text;
+    XmTextField block_rgba_b_text;
+    XmTextField block_rgba_a_text;
+    XmToggleButton block_index_tb;
+    XmToggleButton block_inside_tb;
+  };
+};
+
+object block_llf_label : XmLabel {
+  arguments {
+    XmNlabelString = "llf:";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNtopOffset = 8;
+    XmNrightAttachment = XmATTACH_WIDGET;
+    XmNrightWidget = block_llf_x_text;
+  };
+};
+
+object block_llf_x_text : XmTextField {
+  arguments {
+    XmNcolumns = 5;
+    XmNrightAttachment = XmATTACH_WIDGET;
+    XmNrightWidget = block_llf_y_text;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xtfunhandler_create_cb(1);
+  };
+};
+
+object block_llf_y_text : XmTextField {
+  arguments {
+    XmNcolumns = 5;
+    XmNrightAttachment = XmATTACH_WIDGET;
+    XmNrightWidget = block_llf_z_text;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xtfunhandler_create_cb(2);
+  };
+};
+
+object block_llf_z_text : XmTextField {
+  arguments {
+    XmNcolumns = 5;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xtfunhandler_create_cb(3);
+  };
+};
+
+object block_trb_label : XmLabel {
+  arguments {
+    XmNlabelString = "trb:";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = block_llf_x_text;
+    XmNtopOffset = 7;
+    XmNrightAttachment = XmATTACH_WIDGET;
+    XmNrightWidget = block_trb_x_text;
+  };
+};
+
+object block_trb_x_text : XmTextField {
+  arguments {
+    XmNcolumns = 5;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = block_llf_x_text;
+    XmNrightAttachment = XmATTACH_WIDGET;
+    XmNrightWidget = block_trb_y_text;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xtfunhandler_create_cb(4);
+  };
+};
+
+object block_trb_y_text : XmTextField {
+  arguments {
+    XmNcolumns = 5;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = block_llf_y_text;
+    XmNrightAttachment = XmATTACH_WIDGET;
+    XmNrightWidget = block_trb_z_text;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xtfunhandler_create_cb(5);
+  };
+};
+
+object block_trb_z_text : XmTextField {
+  arguments {
+    XmNcolumns = 5;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = block_llf_z_text;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xtfunhandler_create_cb(6);
+  };
+};
+
+object block_rgba_label : XmLabel {
+  arguments {
+    XmNlabelString = "rgba:";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = block_trb_x_text;
+    XmNrightAttachment = XmATTACH_WIDGET;
+    XmNrightWidget = block_rgba_r_text;
+    XmNbottomAttachment = XmATTACH_FORM;
+  };
+};
+
+object block_rgba_r_text : XmTextField {
+  arguments {
+    XmNcolumns = 5;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = block_trb_x_text;
+    XmNrightAttachment = XmATTACH_WIDGET;
+    XmNrightWidget = block_rgba_g_text;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xtfunhandler_create_cb(7);
+  };
+};
+
+object block_rgba_g_text : XmTextField {
+  arguments {
+    XmNcolumns = 5;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = block_trb_x_text;
+    XmNrightAttachment = XmATTACH_WIDGET;
+    XmNrightWidget = block_rgba_b_text;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xtfunhandler_create_cb(8);
+  };
+};
+
+object block_rgba_b_text : XmTextField {
+  arguments {
+    XmNcolumns = 5;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = block_trb_y_text;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_WIDGET;
+    XmNrightWidget = block_rgba_a_text;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xtfunhandler_create_cb(9);
+  };
+};
+
+object block_rgba_a_text : XmTextField {
+  arguments {
+    XmNcolumns = 5;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = block_trb_z_text;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xtfunhandler_create_cb(10);
+  };
+};
+
+object block_index_tb: XmToggleButton {
+  arguments { 
+    XmNlabelString = "Indices"; 
+    XmNset = true; 
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb( 11 );
+    XmNvalueChangedCallback = procedure blockxtfunhandler_indx_chng_cb();
+  };
+};
+
+object block_inside_tb: XmToggleButton {
+  arguments { 
+    XmNlabelString = "Inside"; 
+    XmNset = true; 
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = block_index_tb;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb( 12 );
+  };
+};
+
+object block_tfun_buttonform : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= block_settings_form;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+    XmNbottomAttachment= XmATTACH_FORM;
+    XmNfractionBase = 6;
+  };
+  controls {
+    XmPushButton tfun_save;
+    XmPushButton tfun_set;
+    XmPushButton tfun_reset;
+    XmPushButton block_tfun_help;
+  };
+};
+
+object block_tfun_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNmnemonic = keysym('H');
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = block_settings_form;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 5;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 6;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb( block_tfun_help_text );
+  };
+};
+
+!----------------------- maskTfun dialog stuff
+object mask_tfun_dlog : XmFormDialog {
+  arguments {
+    XmNdialogTitle = "Transfer Function";
+    XmNuserData = owner_object;
+  };
+  controls { XmFrame mask_tfun_frame;
+  };
+};
+
+object mask_tfun_topform : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+    XmNheight= 133;
+    XmNwidth=284;
+  };
+  controls { 
+    XmFrame mask_tfun_frame;
+  };
+};
+
+object mask_tfun_frame : XmFrame {
+  arguments {
+    XmNuserData = owner_object;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNshadowType = XmSHADOW_OUT;
+  };
+  controls {
+    XmForm mask_tfun_form;
+  };
+};
+
+object mask_tfun_form : XmForm {
+  arguments {
+    XmNuserData = owner_object;
+  };
+  controls {
+    XmForm mask_tfun_topcontrols;
+    XmForm mask_tfun_buttonform;
+    XmMenuBar mask_mask_select_bar;
+    XmLabel mask_mask_label;
+    XmScrolledWindow mask_tfun_maskscroll;
+    XmMenuBar mask_input_select_bar;
+    XmLabel mask_input_label;
+    XmScrolledWindow mask_tfun_kidscroll;
+  };
+};
+
+object mask_tfun_topcontrols : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmLabel mask_tfun_label;
+    XmLabel tfun_weight_label;
+    XmTextField tfun_weight_text;
+    XmPushButton tfun_delete_pb;
+  };
+};
+
+object mask_tfun_buttonform : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= mask_tfun_topcontrols;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+    XmNfractionBase = 6;
+  };
+  controls {
+    XmPushButton tfun_save;
+    XmPushButton tfun_set;
+    XmPushButton tfun_reset;
+    XmPushButton mask_tfun_help;
+  };
+};
+
+object mask_mask_select_bar : XmMenuBar {
+  arguments {
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = mask_tfun_buttonform;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNleftOffset = 10;
+    XmNuserData = owner_object;
+  };
+  controls { 
+    XmCascadeButton mask_mask_select;
+  };
+};
+
+object mask_mask_select : XmCascadeButton {
+  arguments {
+    XmNlabelString = "Select";
+    XmNfontList = label_font;
+    XmNuserData = owner_object;
+  };
+  controls { XmPulldownMenu sum_tfun_add_pd; };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(5);
+    XmNcascadingCallback= procedure maskxtfunhandler_btn_press_cb( 0 );
+  };
+};
+
+object mask_mask_label : XmLabel {
+  arguments {
+    XmNlabelString = "Mask";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget= mask_tfun_buttonform;
+    XmNtopOffset= 10;
+    XmNleftAttachment= XmATTACH_WIDGET;
+    XmNleftWidget= mask_mask_select_bar;
+  };
+};
+
+object mask_tfun_maskscroll : XmScrolledWindow {
+  arguments {
+    XmNuserData = owner_object;
+    XmNvisualPolicy= XmCONSTANT;
+    XmNscrollingPolicy= XmAUTOMATIC;
+    XmNworkWindow= mask_tfun_maskform;
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= mask_mask_select_bar;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmForm mask_tfun_maskform;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(3);
+  };
+};
+
+object mask_input_select_bar : XmMenuBar {
+  arguments {
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = mask_tfun_maskscroll;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNleftOffset = 10;
+    XmNuserData = owner_object;
+  };
+  controls { 
+    XmCascadeButton mask_input_select;
+  };
+};
+
+object mask_input_select : XmCascadeButton {
+  arguments {
+    XmNlabelString = "Select";
+    XmNfontList = label_font;
+    XmNuserData = owner_object;
+  };
+  controls { XmPulldownMenu sum_tfun_add_pd; };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(6);
+    XmNcascadingCallback= procedure maskxtfunhandler_btn_press_cb( 1 );
+  };
+};
+
+object mask_input_label : XmLabel {
+  arguments {
+    XmNlabelString = "TFun to Mask";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget= mask_tfun_maskscroll;
+    XmNtopOffset= 10;
+    XmNleftAttachment= XmATTACH_WIDGET;
+    XmNleftWidget= mask_mask_select_bar;
+  };
+};
+
+object mask_tfun_kidscroll : XmScrolledWindow {
+  arguments {
+    XmNuserData = owner_object;
+    XmNvisualPolicy= XmCONSTANT;
+    XmNscrollingPolicy= XmAUTOMATIC;
+    XmNworkWindow= mask_tfun_kidform;
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= mask_input_label;
+    XmNbottomAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmForm mask_tfun_kidform;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(4);
+  };
+};
+
+object mask_tfun_maskform : XmForm {
+  arguments {
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(1);
+  };
+};
+
+object mask_tfun_kidform : XmForm {
+  arguments {
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xtfunhandler_create_cb(2);
+  };
+};
+
+object mask_tfun_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNmnemonic = keysym('H');
+    XmNfontList = label_font;
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 5;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 6;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb( mask_tfun_help_text );
+  };
+};
+
+object mask_tfun_label : XmLabel {
+  arguments {
+    XmNlabelString= "Mask Tfun";
+    XmNfontList = label_font;
+    XmNbottomAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNbottomOffset = 7;
+  };
+};
+
+

@@ -1,0 +1,17 @@
+CXX= CC
+CC = cc
+CPP= $(CC) -E
+COMP_ID_FLAGS= -DHPUX 
+ENV_CFLAGS= -DSYSV_TIMING -DSYSV_RAND -I/usr/include/X11R5 -I/usr/include/Motif1.2 -O -Aa
+ARCH_LIBOPTIONS=
+
+UILCC=uil
+
+RM = rm
+AR = ar rus
+RANLIB = ranlib
+MAKEDEPEND = /usr/bin/X11/makedepend
+
+XLIBOPTIONS= -L/usr/lib/X11R5 -L/usr/lib/Motif1.2 -lMrm -lXm -lXt -lXmu -lX11
+
+

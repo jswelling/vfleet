@@ -1,0 +1,94 @@
+!
+!	This UIL code defines the photocopy dialogs for VFleet
+!
+
+procedure
+        xphotocopy_delete_cb();
+        xphotocopy_create_cb(integer);
+	xphotocopy_expose_cb(integer);
+
+value photocopy_help_text :
+   "The Close button eliminates this image window.";
+
+value no_image_to_photocopy_msg: exported
+    compound_string("Error: no image to copy!");
+
+! identifier owner_object; was defined elsewhere
+
+object photocopy_dlog : XmFormDialog {
+  arguments {
+    XmNdialogTitle = "Copy of Image";
+    XmNuserData = owner_object;
+  };
+  controls { 
+    XmForm photocopy_image_form;
+    XmForm photocopy_controls;
+  };
+};
+
+object photocopy_image_form : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_FORM;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  controls {
+!    XmDrawingArea photocopy_image_area;
+    user_defined photocopy_image_area;
+  };
+};
+
+!object photocopy_image_area : XmDrawingArea {
+object photocopy_image_area : user_defined procedure CreateCanvas {
+    arguments {
+      XmNtopAttachment= XmATTACH_FORM;
+      XmNleftAttachment= XmATTACH_FORM;
+      XmNresizable = false;
+      XmNbackground = color('Black');
+      XmNuserData = owner_object;
+    };
+    callbacks {
+      MrmNcreateCallback = procedure xphotocopy_create_cb(0);
+      XmNexposeCallback = procedure xphotocopy_expose_cb(0);
+    };
+};
+
+object photocopy_controls : XmForm {
+  arguments {
+    XmNtopAttachment= XmATTACH_WIDGET;
+    XmNtopWidget= photocopy_image_form;
+    XmNleftAttachment= XmATTACH_FORM;
+    XmNrightAttachment= XmATTACH_FORM;
+  };
+  controls {
+    XmPushButton photocopy_delete;
+    XmPushButton photocopy_help;
+  };
+};
+
+object photocopy_delete : XmPushButton {
+  arguments {
+    XmNlabelString = "Close";
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure xphotocopy_delete_cb();
+  };
+};
+
+object photocopy_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb( photocopy_help_text );
+  };
+};
+
+

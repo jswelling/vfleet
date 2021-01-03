@@ -1,0 +1,865 @@
+!
+!	This UIL code defines the camera control dialog for VFleet
+!
+
+procedure 
+        xcamhandler_create_cb(integer);
+        xcamhandler_expose_cb(integer);
+        xcamhandler_set_cb();
+        xcamhandler_reset_cb();
+        xcamhandler_button_press_cb(integer);
+	xcamhandler_save_list_file_cb();
+
+value camera_controls_help_text :
+   "This dialog controls everything having to do with the camera.  The " &
+   "camera's position and type and the orientation of the data (which is " &
+   "controlled with the trackball window) determine the view of the data " &
+   "that the renderer produces. \n " &
+   "\n" &
+   "As with all VFleet dialogs, changes you make in this dialog " &
+   "don't take effect until the \"Set\" button is pressed.  To " &
+   "restore the dialog settings to those currently in effect for " &
+   "rendering, use the \"Reset\" button.  The \"Close\" button " &
+   "closes the dialog, but its settings are saved; you can reopen it " &
+   "later.  The \"Help\" button shows you the information you are " &
+   "reading now.\n " &
+   "\n " &
+   "The camera can be thought of as being located at one point and " &
+   "looking at a second point.  These points are known as the " &
+   "\"From\" and \"At\" points respectively.  A direction called " &
+   "\"Up\" specifies a rotation for the camera about its line of " &
+   "sight; the part of the \"Up\" vector perpendicular to the line " &
+   "of sight determines what part of the image is toward the top of " &
+   "the screen.  One way to control these quantities is simply by " &
+   "giving their X, Y, and Z coordinates in the fields provided.\n " &
+   "\n " &
+   "An easier way to control the \"At\", \"From\", and \"Up\" values " &
+   "is to use the \"Dolly\" and \"Twist\" buttons.  The \"In\" " &
+   "button causes the \"From\" point to move forward by the given " &
+   "distance; the \"Out\" button moves it back.  If the \"From\" " &
+   "point gets close to the \"At\" point, the \"At\" point will move " &
+   "too.  The \"Twist\" buttons rotate the \"Up\" direction around " &
+   "the line of sight by the angle shown (in degrees).\n " &
+   "\n " &
+   "Another way to change the \"At\" and \"From\" points is by " &
+   "dragging with the middle mouse button in the rendered image in " &
+   "the main window.  For example, suppose some interesting feature " &
+   "of the image is shown near the edge of the image.  Move the " &
+   "mouse to the feature, press the middle mouse button, move the " &
+   "mouse to the center of the image, and release the middle mouse " &
+   "button.  The \"From\" and \"At\" points in the camera window " &
+   "will change so that the next render will show the feature in the " &
+   "center of the screen.  As usual, you must press the \"Set\" " &
+   "button in the Camera Controls dialog for these changes to take " &
+   "effect.  The drag operation has moved the camera to produce the " &
+   "view you requested.  Two buttons, \"shift at point only\" and " &
+   "\"shift both at and from\", control whether \"At\" or both " &
+   "\"At\" and \"From\" are shifted to accomplish this.\n " &
+   "\n " &
+   "In addition to \"From\", \"At\", and \"Up\", a camera has a " &
+   "\"Fovea\" angle.  This angle is given in degrees; it specifies " &
+   "the width of the field of view of the camera.  The \"Fovea\" " &
+   "angle is controlled with a slider.\n " &
+   "\n " &
+   "The \"Hither\" and \"Yon\" distances specify the range within " &
+   "which rendering occurs.  To render the whole volume, the entire " &
+   "volume must be farther from the camera than the \"Hither\" " &
+   "distance and closer than the \"Yon\" distance.  You can cut " &
+   "through parts of the volume by moving the \"Hither\" and/or " &
+   "\"Yon\" distances closer to the \"At\" point; this will result " &
+   "in parts of the data volume being sliced away.  Note that when " &
+   "using perspective projection (the default), the slice surface is " &
+   "a sphere, not a plane.  Setting \"Hither\" to 0.0 and setting " &
+   "\"Yon\" to a very large number are reasonable things to do.\n " &
+   "\n " &
+   "Normally VFleet uses perspective projection when doing " &
+   "rendering.  With this type of projection, objects which are " &
+   "farther away appear smaller, just like in the real world. " &
+   "Sometimes it is useful to produce images in which distance does " &
+   "not effect rendered size.  This effect is called parallel " &
+   "projection, and it can be turned on by pressing the \"Parallel " &
+   "Projection\" button in this dialog.\n " &
+   "\n " &
+   "VFleet provides a way to save camera information, in case you " &
+   "want to return later to a viewpoint you have used previously. " &
+   "This is done with the View List, which is just a list of " &
+   "previously saved camera information.  When you find a camera " &
+   "position you like, add it to the list using the \"Add\" button. " &
+   "You can accumulate as many viewpoints on the list as you like. " &
+   "To go back to a previously saved viewpoint use the \"Prev\" " &
+   "button; to move from there to a viewpoint saved later use the " &
+   "\"Next\" button.  The \"Save...\" button saves the current list " &
+   "of viewpoints as a Tcl script file.  Saved viewpoints can be " &
+   "reloaded by executing that Tcl script with the \"Run Tcl " &
+   "Script\" command from the \"File\" menu.  Note the the trackball " &
+   "orientation is not saved with the camera information.\n " ;
+
+value save_cam_list_help_text :
+   "This dialog allows you to save the current list of cameras to a file." &
+   "They are saved in the form of Tcl scripting commands, so the usual " &
+   "file extension would be \".tcl\".  If you execute this Tcl script " &
+   "using the \"Run Tcl Script\" item in the \"File\" menu, the saved " &
+   "cameras will be reloaded into the camera list. ";
+
+value invalid_cam_list_file_msg : exported
+compound_string("Error: unable to use the given file name.");
+
+object xcamhandler_dlog : XmFormDialog {
+  arguments {
+    XmNdialogTitle = "Camera Controls";
+    XmNuserData = owner_object;
+  };
+  controls { 
+    XmFrame camera_ctrl_frame;
+    XmForm camera_ctrl_action_area;
+  };
+};
+
+object camera_ctrl_frame : XmFrame {
+  arguments {
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNrightAttachment = XmATTACH_FORM;
+    XmNshadowType = XmSHADOW_OUT;
+  };
+  controls {
+    XmForm camera_ctrl_form;
+  };
+};
+
+object camera_ctrl_form : XmForm {
+  arguments {
+  };
+  controls {
+    XmForm cam_grid_form; 
+    XmLabel cam_hither_label;
+    XmTextField cam_hither;
+    XmLabel cam_yon_label;
+    XmTextField cam_yon;
+    XmForm cam_stack_button_form;
+    XmForm cam_easy_form;
+  };
+};
+
+object cam_stack_button_form : XmForm {
+  arguments {
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_yon;
+    XmNleftAttachment = XmATTACH_FORM;
+  };
+  controls {
+    XmLabel cam_list_label;
+    XmTextField cam_list_count_text;
+    XmLabel cam_list_count_label;
+    XmPushButton cam_add_info_pb;
+    XmPushButton cam_prev_info_pb;
+    XmPushButton cam_next_info_pb;
+    XmPushButton cam_save_list_pb;
+  };
+};
+
+object cam_list_label : XmLabel {
+  arguments {
+    XmNlabelString = "View list";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopOffset = 3;
+  };
+};
+
+object cam_list_count_text : XmTextField {
+  arguments {
+    XmNcolumns = 5;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_add_info_pb;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNsensitive = false;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(0);
+  };
+};
+
+object cam_list_count_label : XmLabel {
+  arguments {
+    XmNlabelString = "items";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_add_info_pb;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_list_count_text;
+    XmNtopOffset = 6;    
+  };
+};
+
+object cam_add_info_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "Add";
+    XmNmnemonic = keysym('A');
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_list_label;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xcamhandler_create_cb(17);
+    XmNactivateCallback = procedure xcamhandler_button_press_cb(0);
+  };
+};
+
+object cam_prev_info_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "Prev";
+    XmNmnemonic = keysym('P');
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_add_info_pb;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNsensitive = false;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xcamhandler_create_cb(18);
+    XmNactivateCallback = procedure xcamhandler_button_press_cb(1);
+  };
+};
+
+object cam_next_info_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "Next";
+    XmNmnemonic = keysym('N');
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_prev_info_pb;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNsensitive = false;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xcamhandler_create_cb(19);
+    XmNactivateCallback = procedure xcamhandler_button_press_cb(2);
+  };
+};
+
+object cam_save_list_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "Save...";
+    XmNmnemonic = keysym('S');
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_list_count_label;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_add_info_pb;
+    XmNtopOffset = 3;
+    XmNsensitive = false;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xcamhandler_create_cb(20);
+    XmNactivateCallback = procedure xcamhandler_button_press_cb(3);
+  };
+};
+
+object cam_easy_form : XmForm {
+  arguments {
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNtopOffset = 18;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_grid_form;
+    XmNmarginWidth = 10;
+  };
+  controls {
+    XmForm cam_dolly_form;
+    XmForm cam_rotate_form;
+    XmForm cam_fov_form;
+    XmToggleButton cam_parallel_proj_tb;
+    XmRadioBox cam_shift_box;
+  };
+};
+
+object cam_parallel_proj_tb : XmToggleButton {
+  arguments {
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_fov_form;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNlabelString = "parallel projection";
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xcamhandler_create_cb(21);
+  };
+};
+
+object cam_shift_box : XmRadioBox {
+  arguments {
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_parallel_proj_tb;
+    XmNleftAttachment = XmATTACH_FORM;
+  };
+  controls {
+    XmToggleButton cam_shift_at;
+    XmToggleButton cam_shift_both;
+  };
+};
+
+object cam_shift_both : XmToggleButton {
+  arguments {
+    XmNlabelString = "shift both at and from";
+    XmNset= true;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xcamhandler_create_cb(15);
+  };
+};
+
+object cam_shift_at : XmToggleButton {
+  arguments {
+    XmNlabelString = "shift at point only";
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback = procedure xcamhandler_create_cb(16);
+  };
+};
+
+object cam_rotate_form : XmForm {
+  arguments {
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_dolly_form;
+    XmNleftAttachment = XmATTACH_FORM;
+  };
+  controls {
+    XmLabel cam_rotate_label;
+    XmTextField cam_rotate_text;
+    XmPushButton cam_rotate_plus_pb;
+    XmPushButton cam_rotate_minus_pb;
+  };
+};
+
+object cam_rotate_plus_pb : XmPushButton {
+  arguments {
+    XmNlabelString = " + ";
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNtopOffset = 3;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_rotate_text;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure xcamhandler_button_press_cb(4);
+  };
+};
+
+object cam_rotate_minus_pb : XmPushButton {
+  arguments {
+    XmNlabelString = " - ";
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNtopOffset = 3;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_rotate_plus_pb;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure xcamhandler_button_press_cb(5);
+  };
+};
+
+object cam_rotate_label : XmLabel {
+  arguments {
+    XmNlabelString = "twist by";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopOffset = 6;
+  };
+};
+
+object cam_rotate_text : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_rotate_label;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(1);
+  };
+};
+
+object cam_dolly_form : XmForm {
+  arguments {
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_FORM;
+  };
+  controls {
+    XmLabel cam_dolly_label;
+    XmTextField cam_dolly_text;
+    XmPushButton cam_dolly_in_pb;
+    XmPushButton cam_dolly_out_pb;
+  };
+};
+
+object cam_dolly_in_pb : XmPushButton {
+  arguments {
+    XmNlabelString = " In ";
+    XmNmnemonic = keysym('I');
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNtopOffset = 3;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_dolly_text;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure xcamhandler_button_press_cb(6);
+  };
+};
+
+object cam_dolly_out_pb : XmPushButton {
+  arguments {
+    XmNlabelString = "Out";
+    XmNmnemonic = keysym('O');
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNtopOffset = 3;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_dolly_in_pb;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure xcamhandler_button_press_cb(7);
+  };
+};
+
+object cam_dolly_label : XmLabel {
+  arguments {
+    XmNlabelString = "dolly by";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopOffset = 6;
+  };
+};
+
+object cam_dolly_text : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_dolly_label;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(2);
+  };
+};
+
+object cam_fov_form : XmForm {
+  arguments {
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_rotate_form;
+  };
+  controls {
+    XmLabel cam_fov_label;
+    XmScale cam_fov_scale;
+  };
+};
+
+object cam_fov_label : XmLabel {
+  arguments {
+    XmNlabelString = "fovea:";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_FORM;
+  };
+};
+
+object cam_fov_scale : XmScale {
+  arguments {
+    XmNminimum = 1;
+    XmNmaximum = 90;
+    XmNorientation = XmHORIZONTAL;
+    XmNshowValue = true;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_fov_label;
+    XmNscaleWidth = 180;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    MrmNcreateCallback= procedure xcamhandler_create_cb(14);
+  };
+};
+
+object cam_hither_label : XmLabel {
+  arguments {
+    XmNlabelString = "hither:";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_grid_form;
+    XmNtopOffset = 6;
+    XmNleftAttachment = XmATTACH_FORM;
+  };
+};
+
+object cam_hither : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_hither_label;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_grid_form;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(3);
+  };
+};
+
+object cam_yon_label : XmLabel {
+  arguments {
+    XmNlabelString = "yon:";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_grid_form;
+    XmNtopOffset = 6;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_hither;
+    XmNleftOffset = 20;
+  };
+};
+
+object cam_yon : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_yon_label;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_grid_form;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(4);
+  };
+};
+
+object cam_grid_form : XmForm {
+  controls {
+    XmLabel cam_col_head_x_label;
+    XmLabel cam_col_head_y_label;
+    XmLabel cam_col_head_z_label;
+    XmLabel cam_from_label;
+    XmLabel cam_at_label;
+    XmLabel cam_up_label;
+    XmTextField cam_from_x;
+    XmTextField cam_from_y;
+    XmTextField cam_from_z;
+    XmTextField cam_at_x;
+    XmTextField cam_at_y;
+    XmTextField cam_at_z;
+    XmTextField cam_up_x;
+    XmTextField cam_up_y;
+    XmTextField cam_up_z;
+  };
+};
+
+object cam_col_head_x_label : XmLabel {
+  arguments {
+    XmNlabelString = "X";
+    XmNfontList = label_font;
+    XmNbottomAttachment = XmATTACH_WIDGET;
+    XmNbottomWidget = cam_from_x;
+    XmNleftAttachment = XmATTACH_OPPOSITE_WIDGET;
+    XmNleftWidget = cam_from_x;
+    XmNleftOffset = 25;
+  };
+};
+
+object cam_col_head_y_label : XmLabel {
+  arguments {
+    XmNlabelString = "Y";
+    XmNfontList = label_font;
+    XmNbottomAttachment = XmATTACH_WIDGET;
+    XmNbottomWidget = cam_from_x;
+    XmNleftAttachment = XmATTACH_OPPOSITE_WIDGET;
+    XmNleftWidget = cam_from_y;
+    XmNleftOffset = 25;
+  };
+};
+
+object cam_col_head_z_label : XmLabel {
+  arguments {
+    XmNlabelString = "Z";
+    XmNfontList = label_font;
+    XmNbottomAttachment = XmATTACH_WIDGET;
+    XmNbottomWidget = cam_from_y;
+    XmNleftAttachment = XmATTACH_OPPOSITE_WIDGET;
+    XmNleftWidget = cam_from_z;
+    XmNleftOffset = 25;
+  };
+};
+
+object cam_from_label : XmLabel {
+  arguments {
+    XmNlabelString = "From:";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNtopOffset = 24;
+    XmNleftAttachment = XmATTACH_FORM;
+  };
+};
+
+object cam_from_x : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_from_label;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNtopOffset = 18;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(5);
+  };
+};
+
+object cam_from_y : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_from_x;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNtopOffset = 18;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(6);
+  };
+};
+
+object cam_from_z : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_from_y;
+    XmNtopAttachment = XmATTACH_FORM;
+    XmNtopOffset = 18;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(7);
+  };
+};
+
+object cam_at_label : XmLabel {
+  arguments {
+    XmNlabelString = "At:";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_from_x;
+    XmNtopOffset = 6;
+    XmNleftAttachment = XmATTACH_FORM;
+  };
+};
+
+object cam_at_x : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_from_label;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_from_x;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(8);
+  };
+};
+
+object cam_at_y : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_at_x;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_from_x;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(9);
+  };
+};
+
+object cam_at_z : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_at_y;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_from_x;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(10);
+  };
+};
+
+object cam_up_label : XmLabel {
+  arguments {
+    XmNlabelString = "Up:";
+    XmNfontList = label_font;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_at_x;
+    XmNtopOffset = 6;
+    XmNleftAttachment = XmATTACH_FORM;
+  };
+};
+
+object cam_up_x : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_from_label;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_at_x;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(11);
+  };
+};
+
+object cam_up_y : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_up_x;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_at_x;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(12);
+  };
+};
+
+object cam_up_z : XmTextField {
+  arguments {
+    XmNcolumns = 7;
+    XmNleftAttachment = XmATTACH_WIDGET;
+    XmNleftWidget = cam_up_y;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = cam_at_x;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNmodifyVerifyCallback= procedure num_text_check_cb();
+    MrmNcreateCallback= procedure xcamhandler_create_cb(13);
+  };
+};
+
+object camera_ctrl_action_area : XmForm {
+  arguments { 
+    XmNfractionBase = 7;
+    XmNleftAttachment = XmATTACH_FORM;
+    XmNtopAttachment = XmATTACH_WIDGET;
+    XmNtopWidget = camera_ctrl_frame;
+    XmNrightAttachment = XmATTACH_FORM;
+  };
+  controls {
+    XmPushButton camera_controls_set;
+    XmPushButton camera_controls_reset;
+    XmPushButton camera_controls_close;
+    XmPushButton camera_controls_help;
+  };
+};
+
+object camera_controls_set : XmPushButton {
+  arguments {
+    XmNlabelString = "Set";
+    XmNmnemonic = keysym('S');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 0;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 1;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure xcamhandler_set_cb();
+  };
+};
+
+object camera_controls_reset : XmPushButton {
+  arguments {
+    XmNlabelString = "Reset";
+    XmNmnemonic = keysym('R');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 2;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 3;
+    XmNuserData = owner_object;
+  };
+  callbacks {
+    XmNactivateCallback = procedure xcamhandler_reset_cb();
+  };
+};
+
+object camera_controls_close : XmPushButton {
+  arguments {
+    XmNlabelString = "Close";
+    XmNmnemonic = keysym('C');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 4;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 5;
+  };
+  callbacks {
+    XmNactivateCallback = procedure close_dialog_cb();
+  };
+};
+
+object camera_controls_help : XmPushButton {
+  arguments {
+    XmNlabelString = "Help";
+    XmNmnemonic = keysym('H');
+    XmNbottomAttachment = XmATTACH_FORM;
+    XmNleftAttachment = XmATTACH_POSITION;
+    XmNleftPosition = 6;
+    XmNrightAttachment = XmATTACH_POSITION;
+    XmNrightPosition = 7;
+  };
+  callbacks {
+    XmNactivateCallback = procedure help_cb( camera_controls_help_text );
+  };
+};
+
+object cam_list_save_file_dlog : XmFileSelectionDialog {
+    arguments {
+        XmNdialogTitle = "Save Camera List File";
+        XmNdirMask = "*.tcl";
+        XmNautoUnmanage = false;
+	XmNuserData = owner_object;
+    };
+    callbacks {
+        XmNhelpCallback=procedure help_cb(save_cam_list_help_text);
+        XmNokCallback=procedure xcamhandler_save_list_file_cb();
+        XmNcancelCallback = procedure unmanage_cb();
+    };   
+};
+
